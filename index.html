@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Busca nas notas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;650&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<style>
+  :root {
+    --bg: #EEF1F4;
+    --surface: #FFFFFF;
+    --ink: #1C2430;
+    --muted: #5B6675;
+    --line: #D5DBE3;
+    --accent: #2F5D8C;
+    --mark: #FFE45C;
+    --mark-ink: #1C2430;
+    --error: #B3261E;
+    --ui: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --read: "Source Serif 4", Georgia, "Times New Roman", serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141A22;
+      --surface: #1C2430;
+      --ink: #E6EAF0;
+      --muted: #93A0B0;
+      --line: #2E3946;
+      --accent: #8DB7E8;
+      --mark: #E8C547;
+      --mark-ink: #141A22;
+      --error: #F2B8B5;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.5 var(--ui);
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+  }
+  main { max-width: 46rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
+
+  h1 { font-size: 1rem; font-weight: 650; margin: 0 0 1rem; color: var(--muted); }
+
+  .search { position: relative; }
+  #q {
+    width: 100%;
+    font: 400 clamp(1.5rem, 4vw, 2.1rem)/1.2 var(--read);
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: .7rem .9rem;
+  }
+  #q::placeholder { color: var(--muted); opacity: .7; }
+  #q:focus { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem;
+    margin: .8rem 0 2rem; font-size: .9rem; color: var(--muted);
+  }
+  #status { flex: 1 1 14rem; }
+  #status.error { color: var(--error); }
+  progress { width: 8rem; height: .4rem; accent-color: var(--accent); }
+  button.small {
+    font: 500 .9rem var(--ui); color: var(--accent); background: none;
+    border: 1px solid var(--line); border-radius: 4px; padding: .3rem .7rem; cursor: pointer;
+  }
+  button.small:disabled { opacity: .5; cursor: default; }
+  button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  #summary { font-size: .9rem; color: var(--muted); margin: 0 0 .75rem; }
+  #results { list-style: none; margin: 0; padding: 0; }
+  #results li + li { border-top: 1px solid var(--line); }
+  .result {
+    display: block; width: 100%; text-align: left; cursor: pointer;
+    background: none; border: 0; color: inherit; font: inherit;
+    padding: 1rem .25rem;
+  }
+  .result:hover .name { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  .path { display: block; font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
+  .name { display: block; font-weight: 650; font-size: 1.1rem; color: var(--accent); overflow-wrap: anywhere; }
+  .count { font-weight: 400; font-size: .85rem; color: var(--muted); margin-left: .4rem; }
+  .snippet {
+    display: block; margin-top: .4rem;
+    font: 1rem/1.6 var(--read); color: var(--ink); overflow-wrap: anywhere;
+  }
+
+  mark {
+    color: var(--mark-ink);
+    background: linear-gradient(100deg, transparent .15em, var(--mark) .2em, var(--mark) calc(100% - .2em), transparent calc(100% - .15em));
+    padding: 0 .12em; border-radius: 2px;
+  }
+
+  dialog {
+    width: min(52rem, 100vw); max-width: 100vw; height: 100%; max-height: 100%;
+    margin: 0 0 0 auto; padding: 0; border: 0;
+    background: var(--surface); color: var(--ink);
+  }
+  dialog::backdrop { background: rgb(10 15 22 / .45); }
+  .sheet-head {
+    position: sticky; top: 0; z-index: 1;
+    display: flex; gap: 1rem; align-items: flex-start; justify-content: space-between;
+    padding: calc(1rem + env(safe-area-inset-top, 0px)) 1.25rem 1rem;
+    background: var(--surface); border-bottom: 1px solid var(--line);
+  }
+  .sheet-head .actions { display: flex; gap: .5rem; flex-shrink: 0; }
+  .sheet-head a.small {
+    font: 500 .9rem var(--ui); color: var(--accent); text-decoration: none;
+    border: 1px solid var(--line); border-radius: 4px; padding: .3rem .7rem;
+  }
+  #doc {
+    padding: 1.5rem 1.25rem 4rem; max-width: 42rem;
+    font: 1.05rem/1.7 var(--read); overflow-wrap: anywhere;
+  }
+  #doc h1, #doc h2, #doc h3, #doc h4 { font-family: var(--ui); color: var(--ink); line-height: 1.25; margin: 1.6em 0 .5em; }
+  #doc h1 { font-size: 1.7rem; } #doc h2 { font-size: 1.35rem; } #doc h3 { font-size: 1.15rem; }
+  #doc a { color: var(--accent); }
+  #doc pre { overflow-x: auto; background: var(--bg); padding: .8rem; border-radius: 4px; font-size: .9rem; }
+  #doc code { font-size: .9em; }
+  #doc table { display: block; overflow-x: auto; border-collapse: collapse; }
+  #doc th, #doc td { border: 1px solid var(--line); padding: .3rem .6rem; }
+  #doc img { max-width: 100%; }
+  #doc blockquote { margin: 1em 0; padding-left: 1em; border-left: 3px solid var(--line); color: var(--muted); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    dialog[open] { animation: slide .18s ease-out; }
+    @keyframes slide { from { transform: translateX(2rem); opacity: 0; } }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Busca nas notas</h1>
+  <div class="search">
+    <input id="q" type="search" aria-label="Buscar nos arquivos" placeholder="Buscar nos arquivos…" autocomplete="off" spellcheck="false" aria-describedby="status">
+  </div>
+  <div class="bar">
+    <span id="status" role="status">Carregando…</span>
+    <progress id="progress" hidden></progress>
+    <button id="login" class="small" hidden>Entrar com Google</button>
+    <button id="refresh" class="small" disabled>Atualizar índice</button>
+  </div>
+  <p id="summary"></p>
+  <ul id="results"></ul>
+</main>
+
+<dialog id="viewer" aria-labelledby="viewer-title">
+  <div class="sheet-head">
+    <div>
+      <span class="path" id="viewer-path"></span>
+      <span class="name" id="viewer-title"></span>
+    </div>
+    <div class="actions">
+      <a id="viewer-open" class="small" target="_blank" rel="noopener">Abrir no Drive</a>
+      <button class="small" id="viewer-close">Fechar</button>
+    </div>
+  </div>
+  <article id="doc"></article>
+</dialog>
+
+<script>
+/* ============================================================
+   CONFIGURAÇÃO — edite apenas este bloco
+   ============================================================ */
+const CONFIG = {
+  // ID da pasta raiz no Drive (o trecho depois de /folders/ na URL)
+  ROOT_FOLDER_ID: '18d2WDlMOMsSiThYsLUMWB-6I0kySMUnl',
+
+  // Chave de API do Google Cloud (Drive API ativada).
+  // Basta ela se a pasta estiver compartilhada como "Qualquer pessoa com o link".
+  API_KEY: 'COLE_SUA_API_KEY_AQUI',
+
+  // Opcional: Client ID OAuth. Preencha só se a pasta for privada;
+  // aí cada visitante entra com a própria conta Google.
+  CLIENT_ID: '45623565606-0lvqqrtsom423vb26d4ab2spgmh4rhuf.apps.googleusercontent.com',
+
+  EXTENSIONS: ['.md', '.markdown'],
+  CONCURRENCY: 6,        // downloads simultâneos
+  MAX_RESULTS: 200,      // resultados exibidos
+  SNIPPETS_PER_FILE: 3
+};
+
+/* ============================================================ */
+const DRIVE = 'https://www.googleapis.com/drive/v3';
+const FOLDER = 'application/vnd.google-apps.folder';
+const SHORTCUT = 'application/vnd.google-apps.shortcut';
+const $ = (s) => document.querySelector(s);
+const state = { docs: [], indexing: false, results: [], terms: [] };
+let accessToken = null;
+
+/* ---------- utilidades ---------- */
+const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ESC[c]);
+const plural = (n, um, varios) => `${n.toLocaleString('pt-BR')} ${n === 1 ? um : varios}`;
+
+// Minúsculas e sem acentos, preservando o comprimento (posições batem com o texto original)
+const foldCache = new Map();
+function fold(s) {
+  const out = new Array(s.length);
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    let f = foldCache.get(c);
+    if (f === undefined) {
+      f = (c.normalize('NFD')[0] || c).toLowerCase()[0] || c;
+      foldCache.set(c, f);
+    }
+    out[i] = f;
+  }
+  return out.join('');
+}
+
+async function pool(items, n, fn) {
+  let next = 0;
+  const worker = async () => { while (next < items.length) { const i = next++; await fn(items[i], i); } };
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, worker));
+}
+
+function setStatus(text, { error = false } = {}) {
+  const el = $('#status');
+  el.textContent = text;
+  el.classList.toggle('error', error);
+}
+function setProgress(done, total) {
+  const p = $('#progress');
+  if (total == null) { p.hidden = true; return; }
+  p.hidden = false; p.max = total; p.value = done;
+}
+
+/* ---------- cache local (IndexedDB) ---------- */
+const cache = {
+  db: null,
+  open() {
+    if (this.db) return this.db;
+    this.db = new Promise((res, rej) => {
+      const r = indexedDB.open('busca-md-drive', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('files', { keyPath: 'id' });
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    return this.db;
+  },
+  async get(id) {
+    try {
+      const db = await this.open();
+      return await new Promise((res) => {
+        const r = db.transaction('files').objectStore('files').get(id);
+        r.onsuccess = () => res(r.result || null);
+        r.onerror = () => res(null);
+      });
+    } catch { return null; }
+  },
+  async put(value) {
+    try { (await this.open()).transaction('files', 'readwrite').objectStore('files').put(value); } catch {}
+  }
+};
+
+/* ---------- Google Drive ---------- */
+async function driveFetch(url, asText = false) {
+  const u = new URL(url);
+  const headers = {};
+  if (accessToken) headers.Authorization = 'Bearer ' + accessToken;
+  else u.searchParams.set('key', CONFIG.API_KEY);
+  const r = await fetch(u, { headers });
+  if (!r.ok) {
+    let detail = '';
+    try { detail = (await r.json()).error?.message || ''; } catch {}
+    const err = new Error(`${r.status} ${detail}`.trim());
+    err.status = r.status;
+    throw err;
+  }
+  return asText ? r.text() : r.json();
+}
+
+async function listChildren(folderId) {
+  const files = [];
+  let pageToken = '';
+  do {
+    const u = new URL(DRIVE + '/files');
+    u.searchParams.set('q', `'${folderId}' in parents and trashed = false`);
+    u.searchParams.set('fields', 'nextPageToken, files(id, name, mimeType, modifiedTime, shortcutDetails)');
+    u.searchParams.set('pageSize', '1000');
+    u.searchParams.set('supportsAllDrives', 'true');
+    u.searchParams.set('includeItemsFromAllDrives', 'true');
+    if (pageToken) u.searchParams.set('pageToken', pageToken);
+    const data = await driveFetch(u.toString());
+    files.push(...(data.files || []));
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+  return files;
+}
+
+const isMarkdown = (name, mime) =>
+  mime === 'text/markdown' || CONFIG.EXTENSIONS.some((ext) => name.toLowerCase().endsWith(ext));
+
+// Percorre a pasta e todas as subpastas (inclusive atalhos), nível por nível
+async function walk(rootId) {
+  const found = [];
+  const seen = new Set([rootId]);
+  let level = [{ id: rootId, path: '' }];
+  while (level.length) {
+    const nextLevel = [];
+    await pool(level, CONFIG.CONCURRENCY, async (folder) => {
+      for (const f of await listChildren(folder.id)) {
+        let id = f.id, mime = f.mimeType, viaShortcut = false;
+        if (mime === SHORTCUT && f.shortcutDetails) {
+          id = f.shortcutDetails.targetId; mime = f.shortcutDetails.targetMimeType; viaShortcut = true;
+        }
+        if (seen.has(id)) continue;
+        if (mime === FOLDER) {
+          seen.add(id);
+          nextLevel.push({ id, path: folder.path + f.name + '/' });
+        } else if (isMarkdown(f.name, mime)) {
+          seen.add(id);
+          found.push({ id, name: f.name, path: folder.path, modifiedTime: viaShortcut ? null : f.modifiedTime });
+        }
+      }
+      setStatus(`Procurando arquivos… ${plural(found.length, 'encontrado', 'encontrados')}`);
+    });
+    level = nextLevel;
+  }
+  return found;
+}
+
+/* ---------- indexação ---------- */
+async function buildIndex() {
+  if (state.indexing) return;
+  state.indexing = true;
+  $('#refresh').disabled = true;
+  try {
+    setStatus('Procurando arquivos…');
+    const files = await walk(CONFIG.ROOT_FOLDER_ID);
+    const docs = [];
+    let done = 0, failed = 0;
+    setProgress(0, files.length);
+    await pool(files, CONFIG.CONCURRENCY, async (f) => {
+      let content = null;
+      const cached = f.modifiedTime ? await cache.get(f.id) : null;
+      if (cached && cached.modifiedTime === f.modifiedTime) {
+        content = cached.content;
+      } else {
+        try {
+          content = await driveFetch(`${DRIVE}/files/${f.id}?alt=media&supportsAllDrives=true`, true);
+          if (f.modifiedTime) cache.put({ id: f.id, modifiedTime: f.modifiedTime, content });
+        } catch (e) { failed++; console.warn('Não foi possível baixar', f.path + f.name, e); }
+      }
+      if (content != null) {
+        docs.push({ ...f, content, fold: fold(content), foldName: fold(f.path + f.name) });
+      }
+      done++;
+      setProgress(done, files.length);
+      setStatus(`Lendo arquivos… ${done} de ${files.length}`);
+    });
+    docs.sort((a, b) => (a.path + a.name).localeCompare(b.path + b.name, 'pt-BR'));
+    state.docs = docs;
+    setProgress(null);
+    setStatus(plural(docs.length, 'arquivo indexado', 'arquivos indexados') +
+      (failed ? ` · ${plural(failed, 'não pôde ser lido', 'não puderam ser lidos')} (veja o console)` : ''));
+    renderResults();
+  } catch (e) {
+    setProgress(null);
+    if (e.status === 401 && CONFIG.CLIENT_ID) { accessToken = null; $('#login').hidden = false; }
+    setStatus(explainError(e), { error: true });
+  } finally {
+    state.indexing = false;
+    $('#refresh').disabled = false;
+  }
+}
+
+function explainError(e) {
+  if (e.status === 403 || e.status === 404) {
+    return accessToken
+      ? `Sua conta não tem acesso a esta pasta (${e.message}).`
+      : `A pasta não está acessível pela chave de API. Confira se ela está compartilhada como "Qualquer pessoa com o link", se a Drive API está ativada e se a chave permite este domínio. (${e.message})`;
+  }
+  if (e.status === 400) return `Requisição recusada pelo Drive: confira o ID da pasta e a chave de API. (${e.message})`;
+  if (e.status === 401) return 'Sua sessão expirou. Entre com Google de novo.';
+  return `Erro ao acessar o Drive: ${e.message}`;
+}
+
+/* ---------- busca ---------- */
+// Palavras soltas, ou "frases entre aspas". Todos os termos precisam aparecer.
+function parseQuery(q) {
+  const terms = [];
+  const re = /"([^"]+)"|(\S+)/g;
+  let m;
+  while ((m = re.exec(q))) {
+    const t = fold((m[1] || m[2]).trim());
+    if (t) terms.push(t);
+  }
+  return [...new Set(terms)];
+}
+
+function findAll(hay, needle, limit) {
+  const pos = [];
+  let i = hay.indexOf(needle);
+  while (i !== -1 && pos.length < limit) { pos.push(i); i = hay.indexOf(needle, i + needle.length); }
+  return pos;
+}
+
+function search(q) {
+  const terms = parseQuery(q);
+  const results = [];
+  if (!terms.length) return { terms, results };
+  for (const doc of state.docs) {
+    let score = 0, count = 0, ok = true;
+    const hits = [];
+    for (const t of terms) {
+      const pos = findAll(doc.fold, t, 1000);
+      const inName = doc.foldName.includes(t);
+      if (!pos.length && !inName) { ok = false; break; }
+      count += pos.length;
+      score += pos.length + (inName ? 25 : 0);
+      for (const p of pos.slice(0, 20)) hits.push([p, t.length]);
+    }
+    if (ok) results.push({ doc, score, count, hits });
+  }
+  results.sort((a, b) => b.score - a.score);
+  return { terms, results };
+}
+
+function highlight(original, folded, terms) {
+  const marked = new Uint8Array(original.length);
+  for (const t of terms) {
+    let i = folded.indexOf(t);
+    while (i !== -1) { marked.fill(1, i, i + t.length); i = folded.indexOf(t, i + t.length); }
+  }
+  let out = '', open = false;
+  for (let i = 0; i < original.length; i++) {
+    if (marked[i] && !open) { out += '<mark>'; open = true; }
+    if (!marked[i] && open) { out += '</mark>'; open = false; }
+    out += ESC[original[i]] || original[i];
+  }
+  return out + (open ? '</mark>' : '');
+}
+
+function snippets(r, terms) {
+  const { doc } = r, radius = 80, ranges = [];
+  for (const [p, len] of [...r.hits].sort((a, b) => a[0] - b[0])) {
+    const s = Math.max(0, p - radius), e = Math.min(doc.content.length, p + len + radius);
+    const last = ranges[ranges.length - 1];
+    if (last && s <= last[1]) last[1] = Math.max(last[1], e);
+    else { if (ranges.length === CONFIG.SNIPPETS_PER_FILE) break; ranges.push([s, e]); }
+  }
+  return ranges.map(([s, e]) =>
+    (s > 0 ? '…' : '') + highlight(doc.content.slice(s, e), doc.fold.slice(s, e), terms) + (e < doc.content.length ? '…' : ''));
+}
+
+function renderResults() {
+  const q = $('#q').value;
+  const url = q.trim() ? `${location.pathname}?q=${encodeURIComponent(q)}` : location.pathname;
+  history.replaceState(null, '', url);
+
+  const list = $('#results');
+  if (!q.trim()) {
+    list.innerHTML = '';
+    $('#summary').textContent = '';
+    return;
+  }
+  if (!state.docs.length) {
+    list.innerHTML = '';
+    $('#summary').textContent = state.indexing ? 'A busca começa assim que a leitura terminar.' : '';
+    return;
+  }
+  const { terms, results } = search(q);
+  state.results = results; state.terms = terms;
+  const total = results.reduce((n, r) => n + r.count, 0);
+  $('#summary').textContent = results.length
+    ? `${plural(results.length, 'arquivo', 'arquivos')}, ${plural(total, 'ocorrência', 'ocorrências')}` +
+      (results.length > CONFIG.MAX_RESULTS ? ` (mostrando os ${CONFIG.MAX_RESULTS} mais relevantes)` : '')
+    : 'Nenhum arquivo contém todos os termos. Tente menos palavras ou remova as aspas.';
+
+  list.innerHTML = results.slice(0, CONFIG.MAX_RESULTS).map((r, i) => `
+    <li><button class="result" data-i="${i}">
+      <span class="path">${esc(r.doc.path || '/')}</span>
+      <span class="name">${highlight(r.doc.name, fold(r.doc.name), terms)}<span class="count">${plural(r.count, 'ocorrência', 'ocorrências')}</span></span>
+      ${snippets(r, terms).map((s) => `<span class="snippet">${s}</span>`).join('')}
+    </button></li>`).join('');
+}
+
+/* ---------- visualização do arquivo ---------- */
+function openViewer(r) {
+  const { doc } = r;
+  $('#viewer-path').textContent = doc.path || '/';
+  $('#viewer-title').textContent = doc.name;
+  $('#viewer-open').href = `https://drive.google.com/file/d/${doc.id}/view`;
+  const article = $('#doc');
+  if (window.marked && window.DOMPurify) {
+    article.innerHTML = DOMPurify.sanitize(marked.parse(doc.content));
+  } else {
+    article.innerHTML = `<pre>${esc(doc.content)}</pre>`;
+  }
+  article.querySelectorAll('a[href]').forEach((a) => { a.target = '_blank'; a.rel = 'noopener'; });
+  markTextNodes(article, state.terms);
+  $('#viewer').showModal();
+  $('#viewer').scrollTop = 0;
+  const first = article.querySelector('mark');
+  if (first) first.scrollIntoView({ block: 'center' });
+}
+
+function markTextNodes(root, terms) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  for (const node of nodes) {
+    const text = node.nodeValue, folded = fold(text);
+    if (!terms.some((t) => folded.includes(t))) continue;
+    const span = document.createElement('span');
+    span.innerHTML = highlight(text, folded, terms);
+    node.replaceWith(...span.childNodes);
+  }
+}
+
+/* ---------- login (só para pastas privadas) ---------- */
+function loadGoogleIdentity() {
+  return new Promise((res, rej) => {
+    if (window.google?.accounts?.oauth2) return res();
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.onload = res;
+    s.onerror = () => rej(new Error('Não foi possível carregar o login do Google.'));
+    document.head.appendChild(s);
+  });
+}
+async function signIn() {
+  try {
+    await loadGoogleIdentity();
+    google.accounts.oauth2.initTokenClient({
+      client_id: CONFIG.CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/drive.readonly',
+      callback: (resp) => {
+        if (resp.error) return setStatus('Login cancelado ou recusado.', { error: true });
+        accessToken = resp.access_token;
+        $('#login').hidden = true;
+        buildIndex();
+      }
+    }).requestAccessToken();
+  } catch (e) { setStatus(e.message, { error: true }); }
+}
+
+/* ---------- início ---------- */
+let timer;
+$('#q').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(renderResults, 150); });
+$('#results').addEventListener('click', (e) => {
+  const btn = e.target.closest('.result');
+  if (btn) openViewer(state.results[+btn.dataset.i]);
+});
+$('#viewer-close').addEventListener('click', () => $('#viewer').close());
+$('#viewer').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+$('#refresh').addEventListener('click', buildIndex);
+$('#login').addEventListener('click', signIn);
+document.addEventListener('keydown', (e) => {
+  if (e.key === '/' && document.activeElement !== $('#q') && !$('#viewer').open) { e.preventDefault(); $('#q').focus(); }
+});
+
+(function init() {
+  $('#q').value = new URLSearchParams(location.search).get('q') || '';
+  if (!CONFIG.ROOT_FOLDER_ID || CONFIG.ROOT_FOLDER_ID.startsWith('COLE_')) {
+    return setStatus('Preencha ROOT_FOLDER_ID no bloco CONFIG do index.html.', { error: true });
+  }
+  if (CONFIG.CLIENT_ID) {
+    $('#login').hidden = false;
+    $('#refresh').disabled = true;
+    return setStatus('Entre com sua conta Google para ler os arquivos.');
+  }
+  if (!CONFIG.API_KEY || CONFIG.API_KEY.startsWith('COLE_')) {
+    return setStatus('Preencha API_KEY (ou CLIENT_ID) no bloco CONFIG do index.html.', { error: true });
+  }
+  buildIndex();
+})();
+</script>
+</body>
+</html>
