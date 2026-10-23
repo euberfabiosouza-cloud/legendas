@@ -74,15 +74,12 @@
   @media (prefers-reduced-motion: reduce) { body, #q, dialog, .sheet-head { transition: none; } }
 
   .search { position: relative; }
-  #q {
-    width: 100%;
-    font: 400 clamp(1.5rem, 4vw, 2.1rem)/1.2 var(--read);
-    color: var(--ink);
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: .7rem .9rem;
-  }
+#q {
+  width: 100%;
+  font: 400 clamp(1.1rem, 2.5vw, 1.35rem)/1.3 var(--read);
+  /* ...resto igual... */
+  padding: .55rem .8rem;
+}
   #q::placeholder { color: var(--muted); opacity: .7; }
   #q:focus { outline: 3px solid var(--accent); outline-offset: 2px; }
 
