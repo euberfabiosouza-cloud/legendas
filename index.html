@@ -181,7 +181,7 @@ const CONFIG = {
 
   // Opcional: Client ID OAuth. Preencha só se a pasta for privada;
   // aí cada visitante entra com a própria conta Google.
-  CLIENT_ID: '45623565606-0lvqqrtsom423vb26d4ab2spgmh4rhuf.apps.googleusercontent.com',
+  CLIENT_ID: '',
 
   EXTENSIONS: ['.md', '.markdown'],
   CONCURRENCY: 6,        // downloads simultâneos
@@ -367,7 +367,6 @@ async function buildIndex() {
     renderResults();
   } catch (e) {
     setProgress(null);
-    if (e.status === 401 && CONFIG.CLIENT_ID) { accessToken = null; $('#login').hidden = false; }
     setStatus(explainError(e), { error: true });
   } finally {
     state.indexing = false;
