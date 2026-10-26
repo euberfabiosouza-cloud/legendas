@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Legendas dos Vídeos do jw.org</title>
+<title>Busca nas legendas · vídeos do jw.org</title>
+<meta name="description" content="Encontre em que vídeo do jw.org uma frase ou um texto bíblico foi dito.">
+<meta name="theme-color" content="#EEF1F4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141A22" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%232F5D8C%27 stroke-width=%272%27 stroke-linecap=%27round%27%3E%3Crect x=%272.5%27 y=%274.5%27 width=%2719%27 height=%2715%27 rx=%273%27/%3E%3Cpath d=%27M6.5 12.5h4M13 12.5h4.5M6.5 15.5h7M15.5 15.5h2%27/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;650&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
@@ -26,6 +30,13 @@
     --mark-ink: #1C2430;
     --ref-bg: #D3E2F2;
     --error: #B3261E;
+    --error-bg: #FBEAE9;
+    --line-strong: #B7C1CD;
+    --hover: color-mix(in srgb, var(--accent) 7%, var(--surface));
+    --info-bg: color-mix(in srgb, var(--accent) 9%, var(--surface));
+    --ring: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+    --shadow-sm: 0 1px 2px rgb(16 24 40 / .05);
+    --shadow: 0 1px 2px rgb(16 24 40 / .06), 0 6px 16px rgb(16 24 40 / .07);
     --ui: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
     --read: "Source Serif 4", Georgia, "Times New Roman", serif;
     color-scheme: light;
@@ -44,6 +55,10 @@
       --mark-ink: #141A22;
       --ref-bg: #26405F;
       --error: #F2B8B5;
+      --error-bg: #3A2326;
+      --line-strong: #46525F;
+      --shadow-sm: 0 1px 2px rgb(0 0 0 / .25);
+      --shadow: 0 1px 2px rgb(0 0 0 / .3), 0 6px 16px rgb(0 0 0 / .25);
       color-scheme: dark;
     }
   }
@@ -60,104 +75,194 @@
       --mark-ink: #141A22;
       --ref-bg: #26405F;
       --error: #F2B8B5;
+      --error-bg: #3A2326;
+      --line-strong: #46525F;
+      --shadow-sm: 0 1px 2px rgb(0 0 0 / .25);
+      --shadow: 0 1px 2px rgb(0 0 0 / .3), 0 6px 16px rgb(0 0 0 / .25);
       color-scheme: dark;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { scrollbar-gutter: stable; }
   html, body { margin: 0; }
   body {
     background: var(--bg);
     color: var(--ink);
     font: 16px/1.5 var(--ui);
     padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+    -webkit-font-smoothing: antialiased;
   }
-  main { max-width: 46rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
+  /* Com um painel aberto, a página de trás não rola */
+  body:has(dialog[open]) { overflow: hidden; }
+  ::selection { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+  main { max-width: 46rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
 
-  .top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0 0 1rem; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0 0 1.25rem; }
   .top-actions { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
-  h1 { font-size: 1rem; font-weight: 650; margin: 0; color: var(--muted); }
-  #theme { display: inline-flex; align-items: center; gap: .4rem; }
-  #theme svg { width: 1rem; height: 1rem; }
-  body, #q, .field, dialog, .sheet-head { transition: background-color .2s, color .2s; }
+  .topbar h1 {
+    display: flex; align-items: center; gap: .55rem;
+    font-size: 1.2rem; font-weight: 650; letter-spacing: -.01em; margin: 0; color: var(--ink);
+  }
+  .topbar h1 .logo { width: 1.6rem; height: 1.6rem; flex-shrink: 0; color: var(--accent); }
+  .icon, #theme svg { width: 1rem; height: 1rem; flex-shrink: 0; }
+  body, #q, .field, dialog, .sheet-head { transition: background-color .2s, color .2s, border-color .2s, box-shadow .2s; }
   @media (prefers-reduced-motion: reduce) { body, #q, .field, dialog, .sheet-head { transition: none; } }
 
+  kbd {
+    font: 600 .75rem/1 var(--ui); color: var(--muted); background: var(--bg);
+    border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: .2rem .4rem;
+  }
+
   .search { position: relative; }
+  .search .icon-search {
+    position: absolute; left: .9rem; top: 50%; translate: 0 -50%;
+    width: 1.2rem; height: 1.2rem; color: var(--muted); pointer-events: none;
+  }
   #q {
     width: 100%;
     font: 400 clamp(1.1rem, 2.5vw, 1.35rem)/1.3 var(--read);
     color: var(--ink);
     background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: .55rem .8rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    padding: .7rem 3rem .7rem 2.75rem;
+    box-shadow: var(--shadow-sm);
+    text-overflow: ellipsis;
   }
-  #q::placeholder { color: var(--muted); opacity: .7; }
-  #q:focus { outline: 3px solid var(--accent); outline-offset: 2px; }
+  #q::placeholder { color: var(--muted); opacity: 1; }
+  #q:hover, .field:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent) 45%, var(--line-strong)); }
+  /* Anel de foco suave; o contorno transparente aparece no modo de alto contraste */
+  #q:focus, #q:focus:hover, .field:focus, .field:focus:hover:not(:disabled) { outline: 2px solid transparent; border-color: var(--accent); box-shadow: var(--ring); }
+  .search kbd { position: absolute; right: .9rem; top: 50%; translate: 0 -50%; pointer-events: none; }
+  #q:focus ~ kbd, #q:not(:placeholder-shown) ~ kbd { display: none; }
 
   /* Busca por texto bíblico e filtros */
   .refsearch, .filters { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
-  .refsearch { margin-top: .75rem; }
+  .refsearch { margin-top: .85rem; }
   .filters { margin-top: .6rem; }
-  .refsearch .lead { font-size: .9rem; color: var(--muted); margin-right: .25rem; }
+  .refsearch .lead { font-size: .9rem; font-weight: 500; color: var(--muted); margin-right: .25rem; }
   .field {
     font: 400 1rem/1.3 var(--ui); color: var(--ink);
-    background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
-    padding: .45rem .6rem; min-width: 0;
+    background: var(--surface); border: 1px solid var(--line-strong); border-radius: 8px;
+    padding: .5rem .65rem; min-width: 0; min-height: 2.5rem;
   }
-  .filters .field { font-size: .9rem; padding: .35rem .5rem; }
-  .field::placeholder { color: var(--muted); opacity: .7; }
-  .field:focus { outline: 3px solid var(--accent); outline-offset: 2px; }
-  .field:disabled { opacity: .55; }
-  #book { flex: 1 1 12rem; max-width: 18rem; }
-  #folder { max-width: 16rem; }
+  .filters .field { font-size: .9rem; padding: .35rem .55rem; min-height: 2.25rem; }
+  .field::placeholder { color: var(--muted); opacity: 1; }
+  .field:disabled { opacity: .55; cursor: not-allowed; }
+  #book { flex: 1 1 12rem; max-width: 18rem; cursor: pointer; }
+  #folder { max-width: 16rem; cursor: pointer; }
   #chapter, #verse { width: 5.5rem; text-align: center; }
   .sep { color: var(--muted); font: 600 1.15rem var(--read); }
-  .check { display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; cursor: pointer; }
-  .check input { accent-color: var(--accent); width: 1rem; height: 1rem; margin: 0; }
-  .check input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .check { display: inline-flex; align-items: center; gap: .45rem; font-size: .9rem; padding: .25rem .1rem; cursor: pointer; user-select: none; }
+  .check input { accent-color: var(--accent); width: 1rem; height: 1rem; margin: 0; cursor: pointer; }
+  .check input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .bar {
     display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem;
-    margin: .8rem 0 2rem; font-size: .9rem; color: var(--muted);
+    margin: 1rem 0 1.5rem; padding-top: 1rem; border-top: 1px solid var(--line);
+    font-size: .9rem; color: var(--muted);
   }
-  #status { flex: 1 1 14rem; }
-  #status.error { color: var(--error); }
-  progress { width: 8rem; height: .4rem; accent-color: var(--accent); }
-  button.small {
-    font: 500 .9rem var(--ui); color: var(--accent); background: none;
-    border: 1px solid var(--line); border-radius: 4px; padding: .3rem .7rem; cursor: pointer;
+  #status { flex: 1 1 14rem; display: flex; align-items: center; gap: .55rem; }
+  /* Indicador de atividade enquanto o índice é lido ou atualizado */
+  .bar.busy #status:not(.error)::before {
+    content: ""; width: .9em; height: .9em; flex-shrink: 0; border-radius: 50%;
+    border: 2px solid var(--line); border-top-color: var(--accent);
+    animation: spin .8s linear infinite;
   }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .bar.busy #status:not(.error)::before { animation-duration: 2.4s; } }
+  #status.error {
+    align-items: flex-start; color: var(--error); background: var(--error-bg);
+    border: 1px solid color-mix(in srgb, var(--error) 30%, transparent); border-radius: 8px; padding: .6rem .8rem;
+  }
+  #status.error::before {
+    content: ""; width: 1.1em; height: 1.1em; flex-shrink: 0; margin-top: .15em; background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm0 9h2v2h-2z'/%3E%3C/svg%3E") center / contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm0 9h2v2h-2z'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+  progress { width: 8rem; height: .45rem; accent-color: var(--accent); }
+
+  button.small, a.small {
+    display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+    font: 500 .9rem/1.2 var(--ui); color: var(--accent); background: var(--surface); text-decoration: none;
+    border: 1px solid var(--line); border-radius: 8px; padding: .4rem .75rem; min-height: 2.25rem; cursor: pointer;
+    transition: background-color .15s, border-color .15s, color .15s;
+  }
+  button.small:hover:not(:disabled), a.small:hover { background: var(--hover); border-color: var(--line-strong); }
   button.small:disabled { opacity: .5; cursor: default; }
-  button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   button.link {
-    font: inherit; color: var(--accent); background: none; border: 0; padding: 0;
+    font: inherit; font-weight: 500; color: var(--accent); background: none; border: 0; padding: 0;
     text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
   }
+  /* Links que abrem outro site */
+  #summary a::after, #doc a[href^="http"]::after { content: "\2197" / ""; font-size: .85em; margin-left: .15em; }
 
-  #hint { font-size: .9rem; color: var(--muted); margin: 0 0 1rem; }
-  #summary { font-size: .9rem; color: var(--muted); margin: 0 0 .75rem; }
-  #summary a { color: var(--accent); margin-left: .35rem; text-underline-offset: 3px; }
-  #results { list-style: none; margin: 0; padding: 0; }
-  #results li + li { border-top: 1px solid var(--line); }
+  #hint {
+    font-size: .9rem; color: var(--ink); margin: 0 0 1rem; padding: .65rem .85rem;
+    background: var(--info-bg); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); border-radius: 8px;
+  }
+
+  /* Guia rápido, enquanto nada foi buscado */
+  #intro { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 1.2rem 1.4rem; }
+  #intro h2 { font-size: 1rem; font-weight: 650; margin: 0 0 .75rem; }
+  #intro ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+  #intro li { position: relative; padding-left: 1.3rem; font-size: .95rem; color: var(--muted); }
+  #intro li::before {
+    content: ""; position: absolute; left: .15rem; top: .55em;
+    width: .45rem; height: .45rem; border-radius: 50%; background: var(--accent);
+  }
+  #intro strong { color: var(--ink); font-weight: 650; }
+  #intro .tip { margin: 1rem 0 0; padding-top: .85rem; border-top: 1px solid var(--line); font-size: .85rem; color: var(--muted); }
+
+  #summary { font-size: .9rem; color: var(--muted); margin: 0 0 .85rem; }
+  #summary:empty { display: none; }
+  #summary a { color: var(--accent); font-weight: 500; margin-left: .35rem; text-underline-offset: 3px; white-space: nowrap; }
+  /* Nenhum resultado: mensagem em destaque, no lugar da lista */
+  #summary.none {
+    padding: 1.5rem 1.25rem; text-align: center; font-size: .95rem; color: var(--ink);
+    background: var(--surface); border: 1px dashed var(--line-strong); border-radius: 12px;
+  }
+  #summary.none a { display: table; margin: .6rem auto 0; }
+
+  #results { list-style: none; margin: 0; padding: 0; display: grid; gap: .75rem; }
+  #results li {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  @media (hover: hover) { #results li:hover { border-color: var(--line-strong); box-shadow: var(--shadow); } }
+  #results li.seen .name { color: color-mix(in srgb, var(--accent) 70%, var(--muted)); }
   .result {
     display: block; width: 100%; text-align: left; cursor: pointer;
-    background: none; border: 0; color: inherit; font: inherit;
-    padding: 1rem .25rem;
+    background: none; border: 0; border-radius: 12px; color: inherit; font: inherit;
+    padding: 1rem 1.15rem 1.1rem;
   }
+  .result:focus-visible { outline-offset: -2px; }
+  .result:has(+ .watch) { padding-bottom: .75rem; }
   .result:hover .name { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
-  .path { display: block; font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
-  .name { display: block; font-weight: 650; font-size: 1.1rem; color: var(--accent); overflow-wrap: anywhere; }
-  .count { font-weight: 400; font-size: .85rem; color: var(--muted); margin-left: .4rem; }
+  .path { display: block; font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; margin-bottom: .1rem; }
+  .name { display: block; font-weight: 650; font-size: 1.1rem; line-height: 1.35; color: var(--accent); overflow-wrap: anywhere; }
+  .count {
+    display: inline-block; vertical-align: .12em; margin-left: .5rem; padding: .05rem .5rem;
+    font-weight: 500; font-size: .75rem; color: var(--muted); background: var(--bg); border-radius: 999px;
+  }
   .snippet {
-    display: block; margin-top: .4rem;
+    display: block; margin-top: .6rem; padding-left: .8rem; border-left: 2px solid var(--line);
     font: 1rem/1.6 var(--read); color: var(--ink); overflow-wrap: anywhere;
   }
   .time {
-    font: 500 .8rem var(--ui); color: var(--muted); margin-right: .45rem;
+    display: inline-block; vertical-align: .1em; margin-right: .45rem; padding: 0 .45rem;
+    font: 600 .75rem/1.6 var(--ui); color: var(--accent); background: var(--info-bg); border-radius: 999px;
     font-variant-numeric: tabular-nums;
   }
   .watch {
-    display: inline-block; margin: -.5rem 0 1rem .25rem;
-    font-size: .85rem; font-weight: 500; color: var(--accent); text-underline-offset: 3px;
+    display: inline-flex; align-items: center; gap: .45rem; margin: 0 1.15rem 1rem;
+    padding: .3rem .75rem .3rem .65rem; border: 1px solid var(--line); border-radius: 999px;
+    font-size: .85rem; font-weight: 500; color: var(--accent); text-decoration: none;
+  }
+  .watch:hover { background: var(--hover); border-color: var(--line-strong); }
+  .watch::before, #viewer-watch::before {
+    content: ""; width: .6em; height: .7em; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%);
   }
 
   mark {
@@ -175,31 +280,37 @@
     width: min(52rem, 100vw); max-width: 100vw; height: 100%; max-height: 100%;
     margin: 0 0 0 auto; padding: 0; border: 0;
     background: var(--surface); color: var(--ink);
+    box-shadow: -16px 0 40px rgb(10 15 22 / .2);
+    overscroll-behavior: contain;
   }
-  dialog::backdrop { background: rgb(10 15 22 / .45); }
+  dialog::backdrop { background: rgb(10 15 22 / .45); backdrop-filter: blur(2px); }
   .sheet-head {
-    position: sticky; top: 0; z-index: 1;
-    display: flex; gap: 1rem; align-items: flex-start; justify-content: space-between;
-    padding: calc(1rem + env(safe-area-inset-top, 0px)) 1.25rem 1rem;
+    position: sticky; top: 0; z-index: 2;
+    display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: center; justify-content: space-between;
+    padding: calc(.9rem + env(safe-area-inset-top, 0px)) 1.25rem .9rem;
     background: var(--surface); border-bottom: 1px solid var(--line);
   }
-  .sheet-head .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; flex-shrink: 0; }
-  .sheet-head a.small {
-    font: 500 .9rem var(--ui); color: var(--accent); text-decoration: none;
-    border: 1px solid var(--line); border-radius: 4px; padding: .3rem .7rem;
-  }
+  .sheet-head > div:first-child { flex: 1 1 14rem; min-width: 0; }
+  .sheet-head .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
   .seg { display: inline-flex; }
+  .seg button { border-radius: 0; }
+  .seg button:first-child { border-radius: 8px 0 0 8px; }
+  .seg button:last-child { border-radius: 0 8px 8px 0; }
   .seg button + button { margin-left: -1px; }
-  .seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .seg button[aria-pressed="true"], .seg button[aria-pressed="true"]:hover:not(:disabled) {
+    position: relative; background: var(--accent); border-color: var(--accent); color: var(--on-accent);
+  }
 
   #doc {
     padding: 1.5rem 1.25rem 4rem; max-width: 42rem;
     font: 1.05rem/1.7 var(--read); overflow-wrap: anywhere;
   }
+  #doc > :first-child { margin-top: 0; }
+  #doc mark { scroll-margin: 6rem 0; }
   #doc h1, #doc h2, #doc h3, #doc h4 { font-family: var(--ui); color: var(--ink); line-height: 1.25; margin: 1.6em 0 .5em; }
   #doc h1 { font-size: 1.7rem; } #doc h2 { font-size: 1.35rem; } #doc h3 { font-size: 1.15rem; }
   #doc a { color: var(--accent); }
-  #doc pre { overflow-x: auto; background: var(--bg); padding: .8rem; border-radius: 4px; font-size: .9rem; }
+  #doc pre { overflow-x: auto; background: var(--bg); padding: .8rem; border-radius: 6px; font-size: .9rem; }
   #doc code { font-size: .9em; }
   #doc table { display: block; overflow-x: auto; border-collapse: collapse; }
   #doc th, #doc td { border: 1px solid var(--line); padding: .3rem .6rem; }
@@ -209,13 +320,14 @@
   /* Painel de textos citados */
   #cit-body { padding: 1rem 1.25rem 4rem; max-width: 42rem; }
   #cit-body .note { color: var(--muted); font-size: .9rem; margin: 0 0 1rem; }
-  ol.top { margin: 0; padding-left: 2.4rem; }
-  ol.top li::marker { color: var(--muted); font: .85rem var(--ui); }
+  ol.top { margin: 0; padding-left: 2.2rem; }
+  ol.top li::marker { color: var(--muted); font: .85rem var(--ui); font-variant-numeric: tabular-nums; }
   .row {
-    display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: .25rem 1rem;
-    width: 100%; text-align: left; background: none; border: 0; color: inherit;
-    font: 1.05rem/1.4 var(--read); padding: .45rem 0; cursor: pointer;
+    display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: .3rem 1rem;
+    width: 100%; text-align: left; background: none; border: 0; border-radius: 8px; color: inherit;
+    font: 1.05rem/1.4 var(--read); padding: .5rem .6rem; cursor: pointer;
   }
+  .row:hover { background: var(--hover); }
   .row:hover > span:first-child { text-decoration: underline; text-underline-offset: 3px; }
   .n { font: 400 .85rem var(--ui); color: var(--muted); }
   .meter {
@@ -223,18 +335,111 @@
     background: linear-gradient(to right, var(--accent) var(--w), var(--line) var(--w));
   }
   #cit-body details { border-bottom: 1px solid var(--line); }
-  #cit-body summary { padding: .7rem 0; cursor: pointer; font: 650 1.05rem var(--ui); }
-  #cit-body summary .n { float: right; margin-top: .15rem; }
-  .chaps { display: grid; gap: .5rem; padding: 0 0 1rem; }
+  #cit-body summary {
+    display: flex; align-items: center; gap: .6rem; list-style: none;
+    padding: .75rem .25rem; cursor: pointer; font: 650 1.05rem var(--ui);
+  }
+  #cit-body summary::-webkit-details-marker { display: none; }
+  #cit-body summary::before {
+    content: ""; width: .45rem; height: .45rem; margin: 0 .15rem;
+    border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);
+    transform: rotate(-45deg); transition: transform .15s;
+  }
+  #cit-body details[open] > summary::before { transform: rotate(45deg); }
+  #cit-body summary:hover { color: var(--accent); }
+  #cit-body summary .n { margin-left: auto; }
+  .chaps { display: grid; gap: .5rem; padding: 0 0 1rem 1.25rem; }
   .chap { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
   .chip {
     font: 500 .9rem var(--ui); color: var(--ink); background: var(--bg);
-    border: 1px solid var(--line); border-radius: 4px; padding: .2rem .5rem; cursor: pointer;
-    font-variant-numeric: tabular-nums;
+    border: 1px solid var(--line); border-radius: 6px; padding: .25rem .55rem; cursor: pointer;
+    font-variant-numeric: tabular-nums; transition: background-color .15s, border-color .15s;
   }
   .chip small { color: var(--muted); font-weight: 400; font-size: .8rem; margin-left: .35rem; }
   .chip.strong { color: var(--accent); font-weight: 650; }
-  .chip:hover { border-color: var(--accent); }
+  .chip:hover { border-color: var(--accent); background: var(--hover); }
+
+  /* Buscas recentes */
+  #recent { margin: 0 0 1rem; }
+  #recent .head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin: 0 0 .5rem; }
+  #recent h2 { font-size: .9rem; font-weight: 650; color: var(--muted); margin: 0; }
+  #recent .head .link { font-size: .85rem; }
+  #recent .list { display: flex; flex-wrap: wrap; gap: .4rem; }
+  #recent .chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: var(--surface); }
+  #recent .chip small { margin-left: .4rem; }
+
+  /* Filtro do painel de textos citados */
+  .cit-filter { padding: 1rem max(1.25rem, env(safe-area-inset-right)) 0 1.25rem; max-width: 42rem; }
+  .cit-filter .field { width: 100%; }
+  #cit-body { padding-top: .75rem; }
+
+  /* Mais resultados além do limite */
+  #more { display: flex; margin: 1rem auto 0; }
+
+  /* Legenda no leitor: marca de tempo curta no início de cada fala */
+  #doc .cue {
+    display: inline-block; vertical-align: .1em; margin-right: .5rem; padding: 0 .45rem;
+    font: 600 .75rem/1.6 var(--ui); color: var(--muted); background: var(--bg); border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+  }
+  #doc:focus { outline: none; }
+  #doc mark.current { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* Navegação entre ocorrências no leitor */
+  .matches { display: inline-flex; align-items: center; gap: .25rem; margin-right: .25rem; }
+  .matches .pos { font: 500 .85rem var(--ui); color: var(--muted); min-width: 4.5rem; text-align: center; font-variant-numeric: tabular-nums; }
+  .matches button.small { padding: .4rem .55rem; }
+
+  /* Telefone deitado: respeita o entalhe nas laterais */
+  main { padding-left: max(1.25rem, env(safe-area-inset-left)); padding-right: max(1.25rem, env(safe-area-inset-right)); }
+  .sheet-head, #doc, #cit-body { padding-right: max(1.25rem, env(safe-area-inset-right)); }
+
+  /* Modo de alto contraste do Windows */
+  @media (forced-colors: active) {
+    mark, mark.ref { background: Mark; color: MarkText; forced-color-adjust: none; }
+    .seg button[aria-pressed="true"] { background: Highlight; color: HighlightText; forced-color-adjust: none; }
+    .watch::before, #viewer-watch::before, #status.error::before { background: CanvasText; forced-color-adjust: none; }
+    #doc mark.current { outline-color: Highlight; }
+  }
+
+  /* Celular */
+  @media (max-width: 36rem) {
+    main { padding: 1.5rem 1rem 3rem; }
+    .topbar { gap: .75rem; }
+    .top-actions { flex-wrap: nowrap; }
+    .topbar h1 { font-size: 1.1rem; }
+    #theme .label, #cit-open .icon { display: none; }
+    .refsearch .lead { flex-basis: 100%; margin: 0; }
+    #book { flex-basis: 100%; max-width: none; }
+    #folder { flex: 1 1 10rem; max-width: none; }
+    .result { padding: .9rem 1rem 1rem; }
+    .watch { margin: 0 1rem .9rem; }
+    .sheet-head { padding: calc(.7rem + env(safe-area-inset-top, 0px)) 1rem .7rem; }
+    .sheet-head .label { display: none; }
+    .cit-filter { padding-left: 1rem; padding-right: 1rem; }
+    /* No celular, as setas das ocorrências flutuam embaixo, perto do polegar */
+    .matches {
+      position: fixed; z-index: 3; left: 50%; translate: -50% 0; bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+      margin: 0; padding: .25rem; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 999px; box-shadow: var(--shadow);
+    }
+    .matches button.small { border-radius: 999px; }
+    #doc { padding-bottom: 6rem; }
+    #doc, #cit-body { padding-left: 1rem; padding-right: 1rem; }
+  }
+  @media (max-width: 26rem) { .topbar h1 .logo { display: none; } }
+  /* Telas de toque: sem atalho de teclado e com alvos maiores */
+  @media (hover: none) {
+    .search kbd, #intro .tip { display: none; }
+    #q { padding-right: .8rem; }
+  }
+  @media (pointer: coarse) {
+    button.small, a.small, .field, .filters .field { min-height: 2.75rem; }
+    /* Abaixo de 16px o iPhone amplia a página ao tocar no campo */
+    .filters .field { font-size: 1rem; }
+    .check { min-height: 2.75rem; }
+    button, a, summary { -webkit-tap-highlight-color: transparent; }
+    .chip { min-height: 2.25rem; min-width: 2.25rem; }
+  }
 
   @media (prefers-reduced-motion: no-preference) {
     dialog[open] { animation: slide .18s ease-out; }
@@ -244,15 +449,23 @@
 </head>
 <body>
 <main>
-  <div class="top">
-    <h1>Busca nas legendas</h1>
+  <header class="topbar">
+    <h1>
+      <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="3"/><path d="M6.5 12.5h4M13 12.5h4.5M6.5 15.5h7M15.5 15.5h2"/></svg>
+      Busca nas legendas
+    </h1>
     <div class="top-actions">
-      <button id="cit-open" class="small" type="button" disabled>Textos citados</button>
+      <button id="cit-open" class="small" type="button" disabled>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4H9a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H3.5A1.5 1.5 0 0 1 2 16.5zM22 5.5A1.5 1.5 0 0 0 20.5 4H15a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h6.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg>
+        Textos citados
+      </button>
       <button id="theme" class="small" type="button"></button>
     </div>
-  </div>
+  </header>
   <div class="search">
-    <input id="q" type="search" aria-label="Digite uma palavra ou frase dita no vídeo…" placeholder="Digite uma palavra ou frase dita no vídeo…" autocomplete="off" spellcheck="false" aria-describedby="status">
+    <svg class="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" aria-label="Buscar nas legendas" placeholder="Palavra ou frase dita no vídeo" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-describedby="status">
+    <kbd aria-hidden="true" title="Atalho para a busca">/</kbd>
   </div>
   <div class="refsearch" role="group" aria-label="Texto bíblico citado">
     <span class="lead">Texto bíblico</span>
@@ -268,17 +481,37 @@
     <select id="folder" class="field" aria-label="Pasta" hidden>
       <option value="">Todas as pastas</option>
     </select>
-    <label class="check"><input type="checkbox" id="whole"> Palavra inteira</label>
+    <label class="check" title="Não encontra a palavra dentro de outras (ex.: “paz” não acha “capaz”)"><input type="checkbox" id="whole"> Palavra inteira</label>
   </div>
   <div class="bar">
     <span id="status" role="status">Carregando…</span>
     <progress id="progress" hidden></progress>
     <button id="login" class="small" hidden>Entrar com Google</button>
-    <button id="refresh" class="small" disabled>Atualizar índice</button>
+    <button id="refresh" class="small" disabled>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+      Atualizar índice
+    </button>
   </div>
   <p id="hint" hidden></p>
-  <p id="summary"></p>
+  <section id="recent" aria-labelledby="recent-title" hidden>
+    <div class="head">
+      <h2 id="recent-title">Buscas recentes</h2>
+      <button class="link" type="button" id="recent-clear">Limpar</button>
+    </div>
+    <div class="list"></div>
+  </section>
+  <section id="intro" aria-labelledby="intro-title">
+    <h2 id="intro-title">Como buscar</h2>
+    <ul>
+      <li><strong>Palavra ou frase.</strong> Digite o que foi dito no vídeo. Acentos e maiúsculas não fazem diferença.</li>
+      <li><strong>Texto bíblico.</strong> Escolha um livro (e, se quiser, capítulo e versículo) para achar os vídeos que o citam, mesmo abreviado, como “Jo 3:16”.</li>
+      <li><strong>Textos citados.</strong> Veja os versículos que mais aparecem nos vídeos e abra os arquivos onde estão.</li>
+    </ul>
+    <p class="tip">Dica: tecle <kbd>/</kbd> em qualquer lugar da página para voltar à busca.</p>
+  </section>
+  <p id="summary" aria-live="polite"></p>
   <ul id="results"></ul>
+  <button id="more" class="small" type="button" hidden>Mostrar mais</button>
 </main>
 
 <dialog id="viewer" aria-labelledby="viewer-title">
@@ -288,12 +521,18 @@
       <span class="name" id="viewer-title"></span>
     </div>
     <div class="actions">
+      <div class="matches" id="viewer-matches" role="group" aria-label="Ocorrências no arquivo" hidden>
+        <button class="small" type="button" id="match-prev" aria-label="Ocorrência anterior" title="Anterior (Shift+Enter)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>
+        <span class="pos" id="match-pos" aria-live="polite"></span>
+        <button class="small" type="button" id="match-next" aria-label="Próxima ocorrência" title="Próxima (Enter)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
       <a id="viewer-watch" class="small" target="_blank" rel="noopener" hidden>Assistir no jw.org</a>
-      <a id="viewer-open" class="small" target="_blank" rel="noopener">Abrir no Drive</a>
-      <button class="small" id="viewer-close">Fechar</button>
+      <button class="small" type="button" id="viewer-copy" title="Copiar o link deste arquivo com a busca atual"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg><span class="label">Copiar link</span></button>
+      <a id="viewer-open" class="small" target="_blank" rel="noopener" aria-label="Abrir no Drive"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h7v7M21 3l-9 9M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></svg><span class="label">Abrir no Drive</span></a>
+      <button class="small" id="viewer-close" aria-label="Fechar"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span class="label">Fechar</span></button>
     </div>
   </div>
-  <article id="doc"></article>
+  <article id="doc" tabindex="-1"></article>
 </dialog>
 
 <dialog id="citations" aria-labelledby="cit-title">
@@ -307,8 +546,11 @@
         <button class="small" type="button" data-view="top" aria-pressed="true">Mais citados</button>
         <button class="small" type="button" data-view="books" aria-pressed="false">Por livro</button>
       </div>
-      <button class="small" id="cit-close">Fechar</button>
+      <button class="small" id="cit-close" aria-label="Fechar"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span class="label">Fechar</span></button>
     </div>
+  </div>
+  <div class="cit-filter">
+    <input id="cit-q" class="field" type="search" placeholder="Filtrar por livro ou capítulo (ex.: Salmos 23, 1 Co 13)" aria-label="Filtrar textos citados por livro ou capítulo" autocomplete="off" spellcheck="false" enterkeyhint="search">
   </div>
   <div id="cit-body"></div>
 </dialog>
@@ -346,6 +588,7 @@ const SHORTCUT = 'application/vnd.google-apps.shortcut';
 const $ = (s) => document.querySelector(s);
 const state = {
   docs: [], indexing: false, results: [], terms: [], ref: null, hintRef: null,
+  limit: 0, resultsKey: '', openId: null, pendingOpen: null, indexedOnce: false, rememberTimer: 0, seen: new Set(), citOpen: new Set(), citScroll: {},
   whole: false, citeCount: 0, pendingFolder: '', citView: 'top'
 };
 let accessToken = null;
@@ -355,6 +598,8 @@ const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ESC[c]);
 const plural = (n, um, varios) => `${n.toLocaleString('pt-BR')} ${n === 1 ? um : varios}`;
 const isW = (c) => (c >= 97 && c <= 122) || (c >= 48 && c <= 57);   // letra ou dígito (texto já dobrado)
+// "Vídeos/2024/" → "Vídeos › 2024" (só para exibir)
+const pathLabel = (p) => (p ? p.slice(0, -1).replace(/\//g, ' › ') : 'Pasta principal');
 
 // Minúsculas e sem acentos, preservando o comprimento (posições batem com o texto original)
 const foldCache = new Map();
@@ -742,7 +987,18 @@ async function driveFetch(url, asText = false) {
   const headers = {};
   if (accessToken) headers.Authorization = 'Bearer ' + accessToken;
   else u.searchParams.set('key', CONFIG.API_KEY);
-  const r = await fetch(u.toString(), { headers });
+  // Falhas passageiras (rede, limite de uso, erro do servidor) são tentadas de novo, com espera crescente
+  let r;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      r = await fetch(u.toString(), { headers });
+      if (attempt < 3 && (r.status === 429 || r.status >= 500)) throw Object.assign(new Error(String(r.status)), { retry: true });
+      break;
+    } catch (e) {
+      if (attempt >= 3 || !(e.retry || e instanceof TypeError)) { if (r) break; throw e; }
+      await new Promise((res) => setTimeout(res, 500 * 2 ** attempt));
+    }
+  }
   if (!r.ok) {
     let detail = '';
     try { detail = (await r.json()).error?.message || ''; } catch {}
@@ -843,6 +1099,8 @@ async function buildIndex() {
   if (state.indexing) return;
   state.indexing = true;
   $('#refresh').disabled = true;
+  $('.bar').classList.add('busy');
+  $('#status').setAttribute('aria-busy', 'true');   // leitores de tela anunciam só o resultado final
   const bg = state.docs.length > 0;          // já há resultados na tela: atualiza sem atrapalhar
   const prefix = () => (bg ? baseStatus() + ' · ' : '');
   try {
@@ -885,6 +1143,7 @@ async function buildIndex() {
       setStatus(bg ? `${prefix()}baixando ${done} de ${toFetch.length}…` : `Lendo arquivos… ${done} de ${toFetch.length}`);
     });
 
+    state.indexedOnce = true;
     const keep = new Set(files.map((f) => f.id));
     const removed = bg ? [...old.keys()].filter((id) => !keep.has(id)).length : 0;
     setDocs(docs);
@@ -899,7 +1158,7 @@ async function buildIndex() {
     if (removed) news.push(plural(removed, 'removido', 'removidos'));
     setProgress(null);
     setStatus(baseStatus() +
-      (bg ? ` · ${news.length ? news.join(', ') : 'tudo em dia'}` : '') +
+      (bg ? ` · ${news.length ? news.join(', ') : 'tudo em dia'} (verificado às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})` : '') +
       (failed ? ` · ${plural(failed, 'não pôde ser lido', 'não puderam ser lidos')} (veja o console)` : ''));
     renderResults();
     if ($('#citations').open) renderCitations();
@@ -909,6 +1168,8 @@ async function buildIndex() {
   } finally {
     state.indexing = false;
     $('#refresh').disabled = false;
+    $('.bar').classList.remove('busy');
+    $('#status').removeAttribute('aria-busy');
   }
 }
 
@@ -1029,9 +1290,12 @@ function snippets(r, terms) {
   return ranges.map(([s, e, p]) => {
     const spans = r.spans.filter(([a, b]) => b > s && a < e).map(([a, b]) => [a - s, b - s]);
     const t = timeAt(doc, p);
-    return (t ? `<span class="time" title="Momento aproximado no vídeo">${t}</span>` : '') +
-      (s > 0 ? '…' : '') + highlight(doc.content.slice(s, e), doc.fold.slice(s, e), terms, spans) +
-      (e < doc.content.length ? '…' : '');
+    // No trecho, as linhas de tempo da legenda ("12 00:01:12,000 --> …") somem: a marca de tempo já aparece antes
+    const text = highlight(doc.content.slice(s, e), doc.fold.slice(s, e), terms, spans)
+      .replace(/(?:^|\s)(?:\d+\s+)?(?:\d{1,2}:)?\d{2}:\d{2}[.,]\d{1,3}\s*--&gt;\s*(?:\d{1,2}:)?\d{2}:\d{2}[.,]\d{1,3}[^\S\n]*/g, ' ')
+      .replace(/^[\d:.,\s-]*(?:&gt;[\d:.,\s]*)?\n|\n[\d:.,\s-]*(?:&gt;[\d:.,\s]*)?$/g, '');   // pedaços de linha de tempo nas pontas
+    return `<span class="snippet" data-p="${p}">` + (t ? `<span class="time" title="Momento aproximado no vídeo">${t}</span>` : '') +
+      (s > 0 ? '…' : '') + text + (e < doc.content.length ? '…' : '') + '</span>';
   });
 }
 
@@ -1045,8 +1309,9 @@ function syncUrl(q, ref, o) {
   }
   if (o.folder) p.set('pasta', o.folder);
   if (o.whole) p.set('inteira', '1');
+  if (state.openId) p.set('arquivo', state.openId);
   const s = p.toString();
-  history.replaceState(null, '', s ? `${location.pathname}?${s}` : location.pathname);
+  history.replaceState(history.state, '', s ? `${location.pathname}?${s}` : location.pathname);
 }
 
 // Se a busca de texto for só uma referência ("jo 3:16"), oferece buscar como texto bíblico
@@ -1061,8 +1326,50 @@ function renderHint(q, ref) {
   const r = found[0];
   state.hintRef = { b: r.b, c: r.c, v: r.v1 };
   hint.innerHTML = `<button class="link" type="button" id="hint-go">Buscar ${esc(refLabel(state.hintRef))} como texto bíblico</button>, ` +
-    'para achar também abreviações e intervalos (como “Jo 3:14-18”).';
+    'para achar também abreviações e intervalos (como “Jo 3:14-18”). Ou tecle Enter.';
   hint.hidden = false;
+}
+
+/* ---------- buscas recentes (só neste navegador) ---------- */
+const RECENT_KEY = 'buscas-recentes';
+function loadRecent() { try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; } }
+function saveRecent(list) { try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch {} }
+function rememberSearch() {
+  clearTimeout(state.rememberTimer);
+  const q = $('#q').value.trim(), ref = currentRef(), o = opts();
+  if (!q && !ref) return;
+  const label = [q && `“${q}”`, ref && refLabel(ref)].filter(Boolean).join(' + ');
+  const item = { q, ref, folder: o.folder, whole: o.whole, label };
+  const same = (x) => x.label === label && x.folder === item.folder && x.whole === item.whole;
+  saveRecent([item, ...loadRecent().filter((x) => !same(x))].slice(0, 8));
+}
+function renderRecent(show) {
+  const list = show ? loadRecent() : [];
+  $('#recent').hidden = !list.length;
+  $('#recent .list').innerHTML = list.map((x, i) =>
+    `<button class="chip" type="button" data-recent="${i}" title="${esc(x.label)}${x.folder ? ' · ' + esc(pathLabel(x.folder)) : ''}">${esc(x.label)}${x.folder ? `<small>${esc(pathLabel(x.folder))}</small>` : ''}</button>`).join('');
+}
+$('#recent').addEventListener('click', (e) => {
+  if (e.target.closest('#recent-clear')) { saveRecent([]); renderRecent(false); $('#q').focus(); return; }
+  const x = loadRecent()[+e.target.closest('[data-recent]')?.dataset.recent];
+  if (!x) return;
+  $('#q').value = x.q || '';
+  setRef(x.ref || {});
+  const folder = $('#folder');
+  if ([...folder.options].some((op) => op.value === x.folder)) folder.value = x.folder || '';
+  else state.pendingFolder = x.folder || '';
+  $('#whole').checked = !!x.whole;
+  renderResults();
+});
+
+// Nome do arquivo sem a extensão, só para exibir
+const displayName = (name) => name.replace(/.(md|markdown)$/i, '');
+
+// O guia "Como buscar" aparece só enquanto não há busca
+function syncIntro(q, ref, folder) {
+  const empty = !(q.trim() || ref || folder);
+  $('#intro').hidden = !empty;
+  renderRecent(empty);
 }
 
 function renderResults() {
@@ -1073,16 +1380,26 @@ function renderResults() {
   state.ref = ref;
   syncUrl(q, ref, o);
   renderHint(q, ref);
+  syncIntro(q, ref, o.folder);
 
   const list = $('#results'), summary = $('#summary');
+  summary.classList.remove('none');
+  $('#more').hidden = true;
+  // Uma busca nova volta a mostrar só o primeiro bloco de resultados
+  const key = JSON.stringify([q.trim(), ref, o.folder, o.whole]);
+  if (key !== state.resultsKey) { state.resultsKey = key; state.limit = CONFIG.MAX_RESULTS; }
+  // Resultado com o foco do teclado, para devolvê-lo depois de redesenhar a lista
+  const focusedId = state.results[+document.activeElement?.closest?.('#results .result')?.dataset.i]?.doc.id;
   if (!q.trim() && !ref && !o.folder) {
     list.innerHTML = '';
     summary.textContent = '';
+    if (state.docs.length) openPending([]);
     return;
   }
   if (ref && ref.c > BOOKS[ref.b - 1][1]) {
     list.innerHTML = '';
     summary.textContent = `${BOOKS[ref.b - 1][0]} tem ${plural(BOOKS[ref.b - 1][1], 'capítulo', 'capítulos')}.`;
+    summary.classList.add('none');
     return;
   }
   if (!state.docs.length) {
@@ -1101,7 +1418,8 @@ function renderResults() {
   state.results = results; state.terms = terms;
   const total = results.reduce((n, r) => n + r.count, 0);
   const label = ref ? refLabel(ref) : '';
-  const more = results.length > CONFIG.MAX_RESULTS ? ` (mostrando os ${CONFIG.MAX_RESULTS} primeiros)` : '';
+  const shown = Math.min(results.length, state.limit);
+  const more = results.length > shown ? ` (mostrando os ${shown.toLocaleString('pt-BR')} mais relevantes)` : '';
   let text;
   if (browse) {
     text = `${plural(results.length, 'arquivo', 'arquivos')} nesta pasta${more}.`;
@@ -1124,36 +1442,96 @@ function renderResults() {
   }
   const link = ref && jwLink(ref);
   summary.innerHTML = esc(text) + (link ? `<a href="${esc(link)}" target="_blank" rel="noopener">Ler ${esc(label)} no jw.org</a>` : '');
+  summary.classList.toggle('none', !results.length);
 
-  list.innerHTML = results.slice(0, CONFIG.MAX_RESULTS).map((r, i) => `
-    <li><button class="result" data-i="${i}">
-      <span class="path">${esc(r.doc.path || '/')}</span>
-      <span class="name">${highlight(r.doc.name, fold(r.doc.name), terms)}${r.count ? `<span class="count">${plural(r.count, 'ocorrência', 'ocorrências')}</span>` : ''}</span>
-      ${snippets(r, terms).map((s) => `<span class="snippet">${s}</span>`).join('')}
+  list.innerHTML = results.slice(0, shown).map((r, i) => `
+    <li${state.seen.has(r.doc.id) ? ' class="seen"' : ''}><button class="result" data-i="${i}">
+      <span class="path">${esc(pathLabel(r.doc.path))}</span>
+      <span class="name">${highlight(displayName(r.doc.name), fold(displayName(r.doc.name)), terms)}${r.count ? `<span class="count">${plural(r.count, 'ocorrência', 'ocorrências')}</span>` : ''}</span>
+      ${snippets(r, terms).join('')}
     </button>${r.doc.video ? `<a class="watch" href="${esc(r.doc.video)}" target="_blank" rel="noopener">Assistir no jw.org</a>` : ''}</li>`).join('');
+  openPending(results);
+  clearTimeout(state.rememberTimer);
+  if (results.length && !browse) state.rememberTimer = setTimeout(rememberSearch, 2500);
+  const rest = results.length - shown;
+  $('#more').hidden = rest <= 0;
+  $('#more').textContent = rest > CONFIG.MAX_RESULTS
+    ? `Mostrar mais ${CONFIG.MAX_RESULTS} (faltam ${rest.toLocaleString('pt-BR')})`
+    : `Mostrar ${rest === 1 ? 'o último' : `os últimos ${rest.toLocaleString('pt-BR')}`}`;
+  if (focusedId) {
+    const i = results.slice(0, shown).findIndex((r) => r.doc.id === focusedId);
+    list.querySelectorAll('.result')[Math.max(0, i)]?.focus({ preventScroll: true });
+  }
+}
+
+/* ---------- link direto para um arquivo (?arquivo=) ---------- */
+function openPending(results) {
+  if (!state.pendingOpen || $('#viewer').open) return;
+  const r = results.find((x) => x.doc.id === state.pendingOpen) ||
+    (() => { const doc = state.docs.find((d) => d.id === state.pendingOpen); return doc && { doc, spans: [], hits: [], count: 0 }; })();
+  if (r) { state.pendingOpen = null; openViewer(r); }
+  else if (state.indexedOnce) state.pendingOpen = null;   // o arquivo não existe mais
 }
 
 /* ---------- visualização do arquivo ---------- */
-function openViewer(r) {
+// Legenda SRT/VTT: o número da fala e a linha "00:00:01,000 --> 00:00:04,000"
+// viram uma marca de tempo curta no início de cada parágrafo
+const CUE_RE = /(?:^|\n)[ \t]*(?:\d+[ \t]*\r?\n)?[ \t]*(?:(\d{1,2}):)?(\d{2}):(\d{2})[.,]\d{1,3}[ \t]*-->[^\n]*\n/g;
+function readable(content) {
+  if (!content.includes('-->')) return content;
+  return content.replace(CUE_RE, (m, h, mi, s) => `\n\n<span class="cue">${+h ? `${+h}:${mi}` : +mi}:${s}</span> `);
+}
+
+// Ocorrências marcadas no leitor e a atual
+const viewerMarks = { list: [], i: 0 };
+function goMatch(i, smooth = true) {
+  const list = viewerMarks.list;
+  if (!list.length) return;
+  list[viewerMarks.i]?.classList.remove('current');
+  viewerMarks.i = (i + list.length) % list.length;
+  const m = list[viewerMarks.i];
+  m.classList.add('current');
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  m.scrollIntoView({ block: 'center', behavior: smooth && !still ? 'smooth' : 'auto' });
+  $('#match-pos').textContent = `${viewerMarks.i + 1} de ${list.length}`;
+}
+
+// Quantas ocorrências vêm antes da posição p (para abrir no trecho clicado)
+function occurrencesBefore(r, p) {
+  let n = r.spans.filter(([s]) => s < p).length;
+  for (const t of state.terms) n += termPositions(r.doc.fold, t, state.whole).filter(([i]) => i < p).length;
+  return n;
+}
+
+function openViewer(r, at = 0) {
   const { doc } = r;
-  $('#viewer-path').textContent = doc.path || '/';
-  $('#viewer-title').textContent = doc.name;
+  state.seen.add(doc.id);
+  $('#viewer-path').textContent = pathLabel(doc.path);
+  $('#viewer-title').textContent = displayName(doc.name);
   $('#viewer-open').href = `https://drive.google.com/file/d/${doc.id}/view`;
   const watch = $('#viewer-watch');
   watch.hidden = !doc.video;
   if (doc.video) watch.href = doc.video;
   const article = $('#doc');
   if (window.marked && window.DOMPurify) {
-    article.innerHTML = DOMPurify.sanitize(marked.parse(doc.content));
+    article.innerHTML = DOMPurify.sanitize(marked.parse(readable(doc.content)));
   } else {
     article.innerHTML = `<pre>${esc(doc.content)}</pre>`;
   }
   article.querySelectorAll('a[href]').forEach((a) => { a.target = '_blank'; a.rel = 'noopener'; });
   markTextNodes(article, state.terms, state.ref);
-  $('#viewer').showModal();
+  viewerMarks.list = [...article.querySelectorAll('mark')];
+  viewerMarks.i = 0;
+  $('#viewer-matches').hidden = viewerMarks.list.length < 2;
+  openSheet($('#viewer'));
+  state.openId = doc.id;
+  syncUrl($('#q').value, currentRef(), opts());   // o endereço passa a abrir este arquivo
+  rememberSearch();
   $('#viewer').scrollTop = 0;
-  const first = article.querySelector('mark');
-  if (first) first.scrollIntoView({ block: 'center' });
+  article.focus({ preventScroll: true });
+  goMatch(Math.min(at, viewerMarks.list.length - 1), false);
+  // Ao fechar, a lista mostra este arquivo como já aberto
+  document.querySelector(`#results .result[data-i="${state.results.indexOf(r)}"]`)?.parentElement.classList.add('seen');
 }
 
 function markTextNodes(root, terms, ref) {
@@ -1186,10 +1564,29 @@ function citationData(docs) {
   return { verse, chap, book };
 }
 
+// "Salmos 23", "1 Co 13", "jo" → livros que combinam e, se houver, o capítulo
+function citFilter() {
+  const t = fold($('#cit-q').value).replace(/[.:]/g, ' ').trim().replace(/\s+/g, ' ');
+  if (!t) return null;
+  const m = t.match(/^((?:[123]\s?)?[^\d]*?)\s*(\d{1,3})?(?:\s.*)?$/) || ['', t, ''];
+  const name = m[1].trim(), key = name.replace(/\s+/g, '');
+  const c = +m[2] || 0;
+  if (!name) return { books: null, c };
+  const books = new Set();
+  BOOKS.forEach(([n], i) => { if (fold(n).replace(/\s+/g, '').startsWith(key)) books.add(i + 1); });
+  const alias = ALIAS.get(key) || ALIAS.get(name);
+  if (alias) books.add(alias.b);
+  if (key === 'jo') books.add(JOB);
+  return { books, c };
+}
+const passes = (f, b, c) => !f || ((!f.books || f.books.has(b)) && (!f.c || c === f.c));
+
 function renderCitations() {
   const o = opts();
   const docs = state.docs.filter((d) => inFolder(d, o.folder));
-  $('#cit-scope').textContent = o.folder ? o.folder.slice(0, -1).replace(/\//g, ' / ') : 'Todas as pastas';
+  const f = citFilter();
+  const noMatch = `<p class="note">Nenhum texto citado combina com “${esc($('#cit-q').value.trim())}”.</p>`;
+  $('#cit-scope').textContent = o.folder ? pathLabel(o.folder) : 'Todas as pastas';
   for (const b of document.querySelectorAll('#citations [data-view]')) {
     b.setAttribute('aria-pressed', String(b.dataset.view === state.citView));
   }
@@ -1202,10 +1599,11 @@ function renderCitations() {
 
   if (state.citView === 'top') {
     const rows = [...verse].map(([k, s]) => { const [b, c, v] = k.split(':').map(Number); return { b, c, v, n: s.size }; })
+      .filter((r) => passes(f, r.b, r.c))
       .sort((x, y) => y.n - x.n || x.b - y.b || x.c - y.c || x.v - y.v)
       .slice(0, CONFIG.TOP_CITATIONS);
     if (!rows.length) {
-      body.innerHTML = '<p class="note">Só há citações de capítulos inteiros. Veja a lista por livro.</p>';
+      body.innerHTML = f ? noMatch : '<p class="note">Só há citações de capítulos inteiros. Veja a lista por livro.</p>';
       return;
     }
     const max = rows[0].n;
@@ -1220,6 +1618,7 @@ function renderCitations() {
   const chaps = new Map(), verses = new Map();
   for (const [k, s] of chap) {
     const [b, c] = k.split(':').map(Number);
+    if (!passes(f, b, c)) continue;
     if (!chaps.has(b)) chaps.set(b, []);
     chaps.get(b).push([c, s.size]);
   }
@@ -1228,8 +1627,11 @@ function renderCitations() {
     if (!verses.has(key)) verses.set(key, []);
     verses.get(key).push([v, s.size]);
   }
+  const shownBooks = [...chaps.keys()].sort((a, b) => a - b);
+  if (!shownBooks.length) { body.innerHTML = noMatch; return; }
+  const autoOpen = f && shownBooks.length <= 3;   // filtrou para poucos livros: já mostra os capítulos
   body.innerHTML = '<p class="note">Os números pequenos mostram em quantos arquivos cada texto aparece.</p>' +
-    [...book.keys()].sort((a, b) => a - b).map((b) => {
+    shownBooks.map((b) => {
       const one = BOOKS[b - 1][1] === 1;
       const inner = chaps.get(b).sort((x, y) => x[0] - y[0]).map(([c, n]) => {
         const vs = (verses.get(`${b}:${c}`) || []).sort((x, y) => x[0] - y[0]);
@@ -1237,7 +1639,7 @@ function renderCitations() {
         return `<div class="chap">${head}${vs.map(([v, m]) =>
           `<button class="chip" type="button" data-b="${b}" data-c="${c}" data-v="${v}" aria-label="${esc(refLabel({ b, c, v }))}, ${plural(m, 'arquivo', 'arquivos')}">${v}<small>${m}</small></button>`).join('')}</div>`;
       }).join('');
-      return `<details><summary>${esc(BOOKS[b - 1][0])}<span class="n">${plural(book.get(b).size, 'arquivo', 'arquivos')}</span></summary><div class="chaps">${inner}</div></details>`;
+      return `<details data-book="${b}"${autoOpen || state.citOpen.has(b) ? ' open' : ''}><summary>${esc(BOOKS[b - 1][0])}<span class="n">${plural(book.get(b).size, 'arquivo', 'arquivos')}</span></summary><div class="chaps">${inner}</div></details>`;
     }).join('');
 }
 
@@ -1268,6 +1670,18 @@ async function signIn() {
   } catch (e) { setStatus(e.message, { error: true }); }
 }
 
+/* ---------- painéis e histórico ---------- */
+// Cada painel aberto ganha uma entrada no histórico: o "Voltar" do celular fecha o painel em vez de sair da página
+history.scrollRestoration = 'manual';
+function openSheet(d) {
+  d.showModal();
+  try { history.pushState({ sheet: d.id }, '', location.href); } catch {}
+}
+window.addEventListener('popstate', () => {
+  for (const d of [$('#viewer'), $('#citations')]) if (d.open && history.state?.sheet !== d.id) d.close();
+  syncUrl($('#q').value, currentRef(), opts());   // o endereço acompanha a busca atual
+});
+
 /* ---------- início ---------- */
 let timer;
 const later = () => { clearTimeout(timer); timer = setTimeout(renderResults, 150); };
@@ -1283,11 +1697,23 @@ $('#book').addEventListener('change', () => {
 });
 for (const id of ['#chapter', '#verse']) {
   $(id).addEventListener('input', (e) => {
+    // "3:16" (ou "3.16", "3 16") no campo do capítulo preenche os dois campos
+    const split = id === '#chapter' && e.target.value.match(/^\s*(\d{1,3})\s*[:.,\s]\s*(\d{0,3})/);
+    if (split) {
+      e.target.value = split[1];
+      syncRefFields();
+      if (!$('#verse').disabled) { $('#verse').value = split[2]; $('#verse').focus(); }
+      return later();
+    }
     e.target.value = e.target.value.replace(/\D/g, '').slice(0, 3);
     syncRefFields();
     later();
   });
 }
+// Apagar com o versículo já vazio volta para o capítulo
+$('#verse').addEventListener('keydown', (e) => {
+  if (e.key === 'Backspace' && !e.target.value && !$('#chapter').disabled) { e.preventDefault(); $('#chapter').focus(); }
+});
 for (const id of ['#folder', '#whole']) $(id).addEventListener('change', renderResults);
 $('#ref-clear').addEventListener('click', () => { setRef({}); renderResults(); $('#book').focus(); });
 $('#hint').addEventListener('click', (e) => {
@@ -1298,18 +1724,42 @@ $('#hint').addEventListener('click', (e) => {
 });
 $('#results').addEventListener('click', (e) => {
   const btn = e.target.closest('.result');
-  if (btn) openViewer(state.results[+btn.dataset.i]);
+  if (!btn) return;
+  const r = state.results[+btn.dataset.i], sn = e.target.closest('.snippet');
+  openViewer(r, sn ? occurrencesBefore(r, +sn.dataset.p) : 0);
 });
 $('#viewer-close').addEventListener('click', () => $('#viewer').close());
+$('#viewer').addEventListener('close', () => { state.openId = null; syncUrl($('#q').value, currentRef(), opts()); });
+$('#viewer-copy').addEventListener('click', async (e) => {
+  const btn = e.currentTarget, label = btn.querySelector('.label');
+  try { await navigator.clipboard.writeText(location.href); }
+  catch { return window.prompt('Copie o link:', location.href); }
+  label.textContent = 'Link copiado';
+  btn.setAttribute('aria-label', 'Link copiado');
+  setTimeout(() => { label.textContent = 'Copiar link'; btn.removeAttribute('aria-label'); }, 2000);
+});
 for (const d of ['#viewer', '#citations']) {
-  $(d).addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+  // Fecha só com clique no fundo escurecido (fora do painel), não em áreas vazias nem ao selecionar texto
+  $(d).addEventListener('click', (e) => {
+    if (e.target !== e.currentTarget) return;
+    const b = e.currentTarget.getBoundingClientRect();
+    if (e.clientX < b.left || e.clientX > b.right || e.clientY < b.top || e.clientY > b.bottom) e.currentTarget.close();
+  });
+  // Fechar o painel desfaz a entrada que ele criou no histórico
+  $(d).addEventListener('close', () => { if (history.state?.sheet === d.slice(1)) history.back(); });
 }
 $('#cit-open').addEventListener('click', () => {
   renderCitations();
-  $('#citations').showModal();
-  $('#citations').scrollTop = 0;
+  openSheet($('#citations'));
+  $('#citations').scrollTop = state.citScroll[state.citView] || 0;   // volta onde a pessoa parou
 });
+$('#citations').addEventListener('close', () => { state.citScroll[state.citView] = $('#citations').scrollTop; });
+$('#cit-body').addEventListener('toggle', (e) => {
+  const b = +e.target.dataset?.book;
+  if (b && !citFilter()) e.target.open ? state.citOpen.add(b) : state.citOpen.delete(b);
+}, true);
 $('#cit-close').addEventListener('click', () => $('#citations').close());
+$('#cit-q').addEventListener('input', () => { renderCitations(); $('#citations').scrollTop = 0; });
 $('#citations').addEventListener('click', (e) => {
   const view = e.target.closest('[data-view]');
   if (view) { state.citView = view.dataset.view; renderCitations(); $('#citations').scrollTop = 0; return; }
@@ -1318,9 +1768,52 @@ $('#citations').addEventListener('click', (e) => {
   setRef({ b: +pick.dataset.b, c: +pick.dataset.c || 0, v: +pick.dataset.v || 0 });
   $('#citations').close();
   renderResults();
-  window.scrollTo({ top: 0 });
+  // Mostra o resumo dos resultados logo abaixo dos campos, em vez do topo da página
+  $('.refsearch').scrollIntoView({ block: 'start' });
+  $('#book').focus({ preventScroll: true });
 });
 $('#refresh').addEventListener('click', buildIndex);
+$('#more').addEventListener('click', () => {
+  const from = state.limit;
+  state.limit += CONFIG.MAX_RESULTS;
+  renderResults();
+  $('#results').querySelectorAll('.result')[from]?.focus();
+});
+$('#match-prev').addEventListener('click', () => goMatch(viewerMarks.i - 1));
+$('#match-next').addEventListener('click', () => goMatch(viewerMarks.i + 1));
+$('#viewer').addEventListener('keydown', (e) => {
+  // Enter / Shift+Enter (ou F3) andam pelas ocorrências, como a busca do navegador
+  if ((e.key === 'Enter' && !e.target.closest('a, button, summary')) || e.key === 'F3') {
+    if (!viewerMarks.list.length) return;
+    e.preventDefault();
+    goMatch(viewerMarks.i + (e.shiftKey ? -1 : 1));
+  }
+});
+// Teclado: Enter busca na hora; as setas descem da busca para os resultados e andam entre eles
+$('#q').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    clearTimeout(timer);
+    renderResults();
+    // Só uma referência ("jo 3:16"): Enter busca como texto bíblico
+    if (state.hintRef) { e.preventDefault(); $('#hint-go').click(); return; }
+    rememberSearch();
+    if (matchMedia('(hover: none)').matches) e.target.blur();   // esconde o teclado do celular
+  } else if (e.key === 'ArrowDown' && $('#results .result')) {
+    e.preventDefault();
+    clearTimeout(timer);
+    renderResults();
+    $('#results .result')?.focus();
+  }
+});
+$('#results').addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+  const all = [...$('#results').querySelectorAll('.result')];
+  const i = all.indexOf(e.target.closest('.result'));
+  if (i < 0) return;
+  e.preventDefault();
+  if (e.key === 'ArrowUp' && i === 0) $('#q').focus();
+  else all[Math.min(all.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1))].focus();
+});
 $('#login').addEventListener('click', signIn);
 document.addEventListener('keydown', (e) => {
   const typing = e.target.closest?.('input, select, textarea');
@@ -1337,6 +1830,8 @@ document.addEventListener('keydown', (e) => {
   else syncRefFields();
   state.pendingFolder = p.get('pasta') || '';
   $('#whole').checked = p.get('inteira') === '1';
+  state.pendingOpen = p.get('arquivo') || null;
+  syncIntro($('#q').value, currentRef(), state.pendingFolder);
 
   if (!CONFIG.ROOT_FOLDER_ID || CONFIG.ROOT_FOLDER_ID.startsWith('COLE_')) {
     return setStatus('Preencha ROOT_FOLDER_ID no bloco CONFIG do index.html.', { error: true });
@@ -1368,8 +1863,10 @@ document.addEventListener('keydown', (e) => {
 
   function render() {
     const dark = isDark();
-    btn.innerHTML = dark ? sun + 'Modo claro' : moon + 'Modo escuro';
-    btn.setAttribute('aria-label', dark ? 'Mudar para o modo claro' : 'Mudar para o modo escuro');
+    const label = dark ? 'Mudar para o modo claro' : 'Mudar para o modo escuro';
+    btn.innerHTML = (dark ? sun : moon) + `<span class="label">${dark ? 'Modo claro' : 'Modo escuro'}</span>`;
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
   }
 
   btn.addEventListener('click', () => {
