@@ -577,6 +577,10 @@ const CONFIG = {
   SNIPPETS_PER_FILE: 3,
   TOP_CITATIONS: 100,    // versículos na lista "Mais citados"
 
+  // Ao abrir a página, só verifica o Drive de novo se a última verificação
+  // foi há mais que estes minutos (o botão "Atualizar índice" verifica na hora)
+  RECHECK_MINUTES: 60,
+
   // Idioma dos links para o jw.org (T = português)
   JW_LOCALE: 'T'
 };
@@ -588,7 +592,7 @@ const SHORTCUT = 'application/vnd.google-apps.shortcut';
 const $ = (s) => document.querySelector(s);
 const state = {
   docs: [], indexing: false, results: [], terms: [], ref: null, hintRef: null,
-  limit: 0, resultsKey: '', openId: null, pendingOpen: null, indexedOnce: false, rememberTimer: 0, seen: new Set(), citOpen: new Set(), citScroll: {},
+  savedAt: 0, limit: 0, resultsKey: '', openId: null, pendingOpen: null, indexedOnce: false, rememberTimer: 0, seen: new Set(), citOpen: new Set(), citScroll: {},
   whole: false, citeCount: 0, pendingFolder: '', citView: 'top'
 };
 let accessToken = null;
@@ -1090,8 +1094,9 @@ async function loadSnapshot() {
   for (const f of snap.files) { const r = recs.get(f.id); if (r) docs.push(makeDoc(f, r.content)); }
   if (!docs.length) return;
   setDocs(docs);
+  state.savedAt = snap.savedAt || 0;
   const when = new Date(snap.savedAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-  setStatus(`${baseStatus()} · salvo em ${when}`);
+  setStatus(`${baseStatus()} · atualizado em ${when}`);
   renderResults();
 }
 
@@ -1846,6 +1851,11 @@ document.addEventListener('keydown', (e) => {
     $('#refresh').disabled = true;
     return setStatus((state.docs.length ? baseStatus() + ' · ' : '') + 'Entre com sua conta Google para buscar novidades.');
   }
+  // Índice salvo e recente: abre direto, sem percorrer o Drive de novo
+  // (um link para um arquivo que ainda não está no índice salvo força a verificação)
+  const fresh = state.docs.length && Date.now() - state.savedAt < CONFIG.RECHECK_MINUTES * 60000 &&
+    !(state.pendingOpen && !state.docs.some((d) => d.id === state.pendingOpen));
+  if (fresh) { $('#refresh').disabled = false; return; }
   buildIndex();
 })();
 </script>
