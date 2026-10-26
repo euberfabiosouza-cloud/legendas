@@ -385,6 +385,30 @@
   #doc:focus { outline: none; }
   #doc mark.current { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+  /* Barra de ferramentas do leitor */
+  .viewer-tools { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+  .filenav { display: inline-flex; align-items: center; gap: .25rem; }
+  .filenav .pos { font: 500 .85rem var(--ui); color: var(--muted); min-width: 3.75rem; text-align: center; font-variant-numeric: tabular-nums; }
+  .filenav button.small, .matches button.small { padding: .4rem .55rem; }
+  .find { position: relative; flex: 1 1 11rem; max-width: 20rem; }
+  .find .icon { position: absolute; left: .65rem; top: 50%; translate: 0 -50%; color: var(--muted); pointer-events: none; }
+  .find .field { width: 100%; min-height: 2.25rem; padding: .35rem .6rem .35rem 2.1rem; font-size: .9rem; }
+  /* Texto bíblico citado dentro do arquivo */
+  #doc .bref {
+    font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer;
+    text-decoration: underline dotted; text-decoration-thickness: 1px; text-underline-offset: 3px;
+  }
+  #doc .bref:hover { text-decoration-style: solid; }
+  .ref-menu {
+    position: fixed; z-index: 5; display: grid; min-width: 14rem; padding: .3rem;
+    background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; box-shadow: var(--shadow);
+  }
+  .ref-menu a, .ref-menu button {
+    display: block; text-align: left; font: 500 .9rem var(--ui); color: var(--ink); text-decoration: none;
+    background: none; border: 0; border-radius: 6px; padding: .55rem .7rem; cursor: pointer;
+  }
+  .ref-menu a:hover, .ref-menu button:hover { background: var(--hover); color: var(--accent); }
+
   /* Navegação entre ocorrências no leitor */
   .matches { display: inline-flex; align-items: center; gap: .25rem; margin-right: .25rem; }
   .matches .pos { font: 500 .85rem var(--ui); color: var(--muted); min-width: 4.5rem; text-align: center; font-variant-numeric: tabular-nums; }
@@ -416,6 +440,7 @@
     .watch { margin: 0 1rem .9rem; }
     .sheet-head { padding: calc(.7rem + env(safe-area-inset-top, 0px)) 1rem .7rem; }
     .sheet-head .label { display: none; }
+    .find { max-width: none; }
     .cit-filter { padding-left: 1rem; padding-right: 1rem; }
     /* No celular, as setas das ocorrências flutuam embaixo, perto do polegar */
     .matches {
@@ -435,7 +460,7 @@
   @media (pointer: coarse) {
     button.small, a.small, .field, .filters .field { min-height: 2.75rem; }
     /* Abaixo de 16px o iPhone amplia a página ao tocar no campo */
-    .filters .field { font-size: 1rem; }
+    .filters .field, .find .field { font-size: 1rem; }
     .check { min-height: 2.75rem; }
     button, a, summary { -webkit-tap-highlight-color: transparent; }
     .chip { min-height: 2.25rem; min-width: 2.25rem; }
@@ -481,6 +506,12 @@
     <select id="folder" class="field" aria-label="Pasta" hidden>
       <option value="">Todas as pastas</option>
     </select>
+    <select id="sort" class="field" aria-label="Ordenar resultados">
+      <option value="">Mais relevantes</option>
+      <option value="n">Mais ocorrências</option>
+      <option value="nome">Nome (A–Z)</option>
+      <option value="recentes">Alterados por último</option>
+    </select>
     <label class="check" title="Não encontra a palavra dentro de outras (ex.: “paz” não acha “capaz”)"><input type="checkbox" id="whole"> Palavra inteira</label>
   </div>
   <div class="bar">
@@ -521,18 +552,34 @@
       <span class="name" id="viewer-title"></span>
     </div>
     <div class="actions">
-      <div class="matches" id="viewer-matches" role="group" aria-label="Ocorrências no arquivo" hidden>
-        <button class="small" type="button" id="match-prev" aria-label="Ocorrência anterior" title="Anterior (Shift+Enter)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>
-        <span class="pos" id="match-pos" aria-live="polite"></span>
-        <button class="small" type="button" id="match-next" aria-label="Próxima ocorrência" title="Próxima (Enter)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
-      </div>
       <a id="viewer-watch" class="small" target="_blank" rel="noopener" hidden>Assistir no jw.org</a>
       <button class="small" type="button" id="viewer-copy" title="Copiar o link deste arquivo com a busca atual"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg><span class="label">Copiar link</span></button>
       <a id="viewer-open" class="small" target="_blank" rel="noopener" aria-label="Abrir no Drive"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h7v7M21 3l-9 9M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></svg><span class="label">Abrir no Drive</span></a>
       <button class="small" id="viewer-close" aria-label="Fechar"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span class="label">Fechar</span></button>
     </div>
+    <div class="viewer-tools">
+      <div class="filenav" id="file-nav" role="group" aria-label="Arquivos da lista de resultados" hidden>
+        <button class="small" type="button" id="file-prev" aria-label="Arquivo anterior" title="Arquivo anterior (←)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+        <span class="pos" id="file-pos"></span>
+        <button class="small" type="button" id="file-next" aria-label="Próximo arquivo" title="Próximo arquivo (→)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+      </div>
+      <div class="find">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="find" class="field" type="search" placeholder="Buscar neste arquivo" aria-label="Buscar neste arquivo" autocomplete="off" spellcheck="false" enterkeyhint="search">
+      </div>
+      <div class="matches" id="viewer-matches" role="group" aria-label="Ocorrências no arquivo" hidden>
+        <button class="small" type="button" id="match-prev" aria-label="Ocorrência anterior" title="Anterior (Shift+Enter)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>
+        <span class="pos" id="match-pos" aria-live="polite"></span>
+        <button class="small" type="button" id="match-next" aria-label="Próxima ocorrência" title="Próxima (Enter)"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <button class="small" type="button" id="copy-quote" title="Copiar o trecho destacado, com o nome do vídeo, o tempo e o link"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="label">Copiar trecho</span></button>
+      </div>
+    </div>
   </div>
   <article id="doc" tabindex="-1"></article>
+  <div class="ref-menu" id="ref-menu" role="menu" hidden>
+    <a id="ref-read" role="menuitem" target="_blank" rel="noopener">Ler no jw.org</a>
+    <button type="button" id="ref-find" role="menuitem">Vídeos que citam este texto</button>
+  </div>
 </dialog>
 
 <dialog id="citations" aria-labelledby="cit-title">
@@ -592,7 +639,7 @@ const SHORTCUT = 'application/vnd.google-apps.shortcut';
 const $ = (s) => document.querySelector(s);
 const state = {
   docs: [], indexing: false, results: [], terms: [], ref: null, hintRef: null,
-  savedAt: 0, limit: 0, resultsKey: '', openId: null, pendingOpen: null, indexedOnce: false, rememberTimer: 0, seen: new Set(), citOpen: new Set(), citScroll: {},
+  savedAt: 0, viewDoc: null, viewIndex: -1, limit: 0, resultsKey: '', openId: null, pendingOpen: null, indexedOnce: false, rememberTimer: 0, seen: new Set(), citOpen: new Set(), citScroll: {},
   whole: false, citeCount: 0, pendingFolder: '', citView: 'top'
 };
 let accessToken = null;
@@ -918,7 +965,8 @@ function setRef({ b, c, v }) {
 function opts() {
   return {
     folder: $('#folder').value || state.pendingFolder || '',
-    whole: $('#whole').checked
+    whole: $('#whole').checked,
+    sort: $('#sort').value
   };
 }
 const inFolder = (doc, folder) => !folder || doc.path.startsWith(folder);
@@ -1304,6 +1352,15 @@ function snippets(r, terms) {
   });
 }
 
+// Ordem escolhida pela pessoa (sem escolha, fica a relevância calculada na busca)
+const byPathName = (a, b) => (a.doc.path + a.doc.name).localeCompare(b.doc.path + b.doc.name, 'pt-BR');
+const SORTS = {
+  n: (a, b) => b.count - a.count || byPathName(a, b),
+  nome: (a, b) => displayName(a.doc.name).localeCompare(displayName(b.doc.name), 'pt-BR') || byPathName(a, b),
+  recentes: (a, b) => (b.doc.modifiedTime || '').localeCompare(a.doc.modifiedTime || '') || byPathName(a, b)
+};
+function sortResults(results, sort) { if (SORTS[sort]) results.sort(SORTS[sort]); }
+
 function syncUrl(q, ref, o) {
   const p = new URLSearchParams();
   if (q.trim()) p.set('q', q);
@@ -1314,6 +1371,7 @@ function syncUrl(q, ref, o) {
   }
   if (o.folder) p.set('pasta', o.folder);
   if (o.whole) p.set('inteira', '1');
+  if (o.sort) p.set('ordem', o.sort);
   if (state.openId) p.set('arquivo', state.openId);
   const s = p.toString();
   history.replaceState(history.state, '', s ? `${location.pathname}?${s}` : location.pathname);
@@ -1391,7 +1449,7 @@ function renderResults() {
   summary.classList.remove('none');
   $('#more').hidden = true;
   // Uma busca nova volta a mostrar só o primeiro bloco de resultados
-  const key = JSON.stringify([q.trim(), ref, o.folder, o.whole]);
+  const key = JSON.stringify([q.trim(), ref, o.folder, o.whole, o.sort]);
   if (key !== state.resultsKey) { state.resultsKey = key; state.limit = CONFIG.MAX_RESULTS; }
   // Resultado com o foco do teclado, para devolvê-lo depois de redesenhar a lista
   const focusedId = state.results[+document.activeElement?.closest?.('#results .result')?.dataset.i]?.doc.id;
@@ -1420,11 +1478,12 @@ function renderResults() {
     const r2 = search(words, ref, o);
     if (r2.results.length) { ({ terms, results } = r2); loose = true; }
   }
+  sortResults(results, o.sort);
   state.results = results; state.terms = terms;
   const total = results.reduce((n, r) => n + r.count, 0);
   const label = ref ? refLabel(ref) : '';
   const shown = Math.min(results.length, state.limit);
-  const more = results.length > shown ? ` (mostrando os ${shown.toLocaleString('pt-BR')} mais relevantes)` : '';
+  const more = results.length > shown ? ` (mostrando os ${shown.toLocaleString('pt-BR')} ${o.sort ? 'primeiros' : 'mais relevantes'})` : '';
   let text;
   if (browse) {
     text = `${plural(results.length, 'arquivo', 'arquivos')} nesta pasta${more}.`;
@@ -1508,15 +1567,8 @@ function occurrencesBefore(r, p) {
   return n;
 }
 
-function openViewer(r, at = 0) {
-  const { doc } = r;
-  state.seen.add(doc.id);
-  $('#viewer-path').textContent = pathLabel(doc.path);
-  $('#viewer-title').textContent = displayName(doc.name);
-  $('#viewer-open').href = `https://drive.google.com/file/d/${doc.id}/view`;
-  const watch = $('#viewer-watch');
-  watch.hidden = !doc.video;
-  if (doc.video) watch.href = doc.video;
+// Desenha o arquivo no leitor e marca os termos (os da busca ou os de "Buscar neste arquivo")
+function renderDoc(doc, terms, ref) {
   const article = $('#doc');
   if (window.marked && window.DOMPurify) {
     article.innerHTML = DOMPurify.sanitize(marked.parse(readable(doc.content)));
@@ -1524,11 +1576,69 @@ function openViewer(r, at = 0) {
     article.innerHTML = `<pre>${esc(doc.content)}</pre>`;
   }
   article.querySelectorAll('a[href]').forEach((a) => { a.target = '_blank'; a.rel = 'noopener'; });
-  markTextNodes(article, state.terms, state.ref);
+  linkRefs(article);
+  markTextNodes(article, terms, ref);
   viewerMarks.list = [...article.querySelectorAll('mark')];
   viewerMarks.i = 0;
-  $('#viewer-matches').hidden = viewerMarks.list.length < 2;
-  openSheet($('#viewer'));
+}
+
+// Cada texto bíblico do arquivo vira um botão: ler no jw.org ou ver os vídeos que o citam
+function linkRefs(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) => (n.parentElement.closest('a, button, code, pre, .cue') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT)
+  });
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  for (const node of nodes) {
+    const text = node.nodeValue;
+    const refs = extractRefs(text).filter((r, i, all) => all.findIndex((x) => x.start === r.start) === i);
+    if (!refs.length) continue;
+    const frag = document.createDocumentFragment();
+    let at = 0;
+    for (const r of refs) {
+      frag.append(text.slice(at, r.start));
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'bref';
+      b.dataset.b = r.b; b.dataset.c = r.c; b.dataset.v = r.v1;
+      b.textContent = text.slice(r.start, r.end);
+      b.title = `${refLabel({ b: r.b, c: r.c, v: r.v1 })}: ler no jw.org ou ver outros vídeos`;
+      frag.append(b);
+      at = r.end;
+    }
+    frag.append(text.slice(at));
+    node.replaceWith(frag);
+  }
+}
+
+function showMatches() {
+  const n = viewerMarks.list.length, finding = !!$('#find').value.trim();
+  $('#viewer-matches').hidden = !n && !finding;
+  for (const id of ['#match-prev', '#match-next', '#copy-quote']) $(id).disabled = !n;
+  if (!n) $('#match-pos').textContent = finding ? 'Nada encontrado' : '';
+}
+
+function openViewer(r, at = 0) {
+  const { doc } = r;
+  state.seen.add(doc.id);
+  state.viewDoc = doc;
+  state.viewIndex = state.results.indexOf(r);
+  $('#find').value = '';
+  hideRefMenu();
+  const n = state.results.length, i = state.viewIndex;
+  $('#file-nav').hidden = i < 0 || n < 2;
+  $('#file-pos').textContent = i < 0 ? '' : `${(i + 1).toLocaleString('pt-BR')} de ${n.toLocaleString('pt-BR')}`;
+  $('#file-prev').disabled = i <= 0;
+  $('#file-next').disabled = i < 0 || i >= n - 1;
+  $('#viewer-path').textContent = pathLabel(doc.path);
+  $('#viewer-title').textContent = displayName(doc.name);
+  $('#viewer-open').href = `https://drive.google.com/file/d/${doc.id}/view`;
+  const watch = $('#viewer-watch');
+  watch.hidden = !doc.video;
+  if (doc.video) watch.href = doc.video;
+  const article = $('#doc');
+  renderDoc(doc, state.terms, state.ref);
+  showMatches();
+  if (!$('#viewer').open) openSheet($('#viewer'));   // trocar de arquivo não cria outra entrada no histórico
   state.openId = doc.id;
   syncUrl($('#q').value, currentRef(), opts());   // o endereço passa a abrir este arquivo
   rememberSearch();
@@ -1719,7 +1829,7 @@ for (const id of ['#chapter', '#verse']) {
 $('#verse').addEventListener('keydown', (e) => {
   if (e.key === 'Backspace' && !e.target.value && !$('#chapter').disabled) { e.preventDefault(); $('#chapter').focus(); }
 });
-for (const id of ['#folder', '#whole']) $(id).addEventListener('change', renderResults);
+for (const id of ['#folder', '#whole', '#sort']) $(id).addEventListener('change', renderResults);
 $('#ref-clear').addEventListener('click', () => { setRef({}); renderResults(); $('#book').focus(); });
 $('#hint').addEventListener('click', (e) => {
   if (!e.target.closest('#hint-go') || !state.hintRef) return;
@@ -1785,9 +1895,91 @@ $('#more').addEventListener('click', () => {
   $('#results').querySelectorAll('.result')[from]?.focus();
 });
 $('#match-prev').addEventListener('click', () => goMatch(viewerMarks.i - 1));
+// Arquivo anterior / próximo da lista, sem fechar o leitor
+const stepFile = (d) => {
+  const r = state.results[state.viewIndex + d];
+  if (state.viewIndex >= 0 && r) openViewer(r);
+};
+$('#file-prev').addEventListener('click', () => stepFile(-1));
+$('#file-next').addEventListener('click', () => stepFile(1));
+
+// Buscar neste arquivo: troca os destaques pelos do texto digitado (vazio volta aos da busca)
+let findTimer;
+$('#find').addEventListener('input', () => {
+  clearTimeout(findTimer);
+  findTimer = setTimeout(() => {
+    const t = $('#find').value.trim();
+    hideRefMenu();
+    renderDoc(state.viewDoc, t ? parseQuery(t) : state.terms, t ? null : state.ref);
+    showMatches();
+    goMatch(0);
+  }, 150);
+});
+
+// Copiar o trecho destacado com a fonte
+$('#copy-quote').addEventListener('click', async (e) => {
+  const m = viewerMarks.list[viewerMarks.i];
+  if (!m) return;
+  const block = m.closest('p, li, blockquote, td, h1, h2, h3, h4, pre') || m.parentElement;
+  const cue = block.querySelector('.cue')?.textContent || '';
+  let text = block.textContent.replace(cue, '').replace(/\s+/g, ' ').trim();
+  const stamp = text.match(/^[\[(]?(\d{1,2}:\d{2}(?::\d{2})?)[\])]?\s*/);
+  if (stamp) text = text.slice(stamp[0].length);
+  if (text.length > 400) {                       // parágrafo longo: só a parte em volta do destaque
+    const at = Math.max(0, text.indexOf(m.textContent.replace(/\s+/g, ' ').trim()));
+    const a = Math.max(0, at - 180), z = Math.min(text.length, at + m.textContent.length + 180);
+    text = (a ? '…' : '') + text.slice(a, z).trim() + (z < text.length ? '…' : '');
+  }
+  const doc = state.viewDoc, time = cue || stamp?.[1] || '';
+  const quote = [`“${text}”`, `— ${displayName(doc.name)}${time ? ` (${time})` : ''}`,
+    doc.video || `https://drive.google.com/file/d/${doc.id}/view`].join('\n');
+  const btn = e.currentTarget, label = btn.querySelector('.label');
+  try { await navigator.clipboard.writeText(quote); }
+  catch { return window.prompt('Copie o trecho:', quote); }
+  label.textContent = 'Copiado';
+  btn.setAttribute('aria-label', 'Trecho copiado');
+  setTimeout(() => { label.textContent = 'Copiar trecho'; btn.removeAttribute('aria-label'); }, 2000);
+});
+
+// Menu do texto bíblico clicado no arquivo
+let menuRef = null;
+function hideRefMenu() { $('#ref-menu').hidden = true; menuRef = null; }
+$('#doc').addEventListener('click', (e) => {
+  const b = e.target.closest('.bref');
+  if (!b) return hideRefMenu();
+  menuRef = { b: +b.dataset.b, c: +b.dataset.c, v: +b.dataset.v };
+  const link = jwLink(menuRef), menu = $('#ref-menu');
+  $('#ref-read').hidden = !link;
+  if (link) $('#ref-read').href = link;
+  $('#ref-read').textContent = `Ler ${refLabel(menuRef)} no jw.org`;
+  menu.hidden = false;
+  const r = b.getBoundingClientRect(), w = menu.offsetWidth, h = menu.offsetHeight;
+  menu.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
+  menu.style.top = (r.bottom + h + 8 > innerHeight ? r.top - h - 6 : r.bottom + 6) + 'px';
+  ($('#ref-read').hidden ? $('#ref-find') : $('#ref-read')).focus();
+});
+$('#ref-read').addEventListener('click', hideRefMenu);
+$('#ref-find').addEventListener('click', () => {
+  const ref = menuRef;
+  hideRefMenu();
+  if (!ref) return;
+  setRef(ref);
+  $('#q').value = '';
+  $('#viewer').close();
+  renderResults();
+  $('.refsearch').scrollIntoView({ block: 'start' });
+});
+$('#viewer').addEventListener('scroll', hideRefMenu);
+// Esc com o menu aberto fecha só o menu
+$('#viewer').addEventListener('cancel', (e) => { if (!$('#ref-menu').hidden) { e.preventDefault(); hideRefMenu(); } });
 $('#match-next').addEventListener('click', () => goMatch(viewerMarks.i + 1));
 $('#viewer').addEventListener('keydown', (e) => {
   // Enter / Shift+Enter (ou F3) andam pelas ocorrências, como a busca do navegador
+  // ← / → trocam de arquivo (fora dos campos de texto)
+  if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !e.target.closest('input, textarea, select') && !e.altKey && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+    return stepFile(e.key === 'ArrowLeft' ? -1 : 1);
+  }
   if ((e.key === 'Enter' && !e.target.closest('a, button, summary')) || e.key === 'F3') {
     if (!viewerMarks.list.length) return;
     e.preventDefault();
@@ -1835,6 +2027,7 @@ document.addEventListener('keydown', (e) => {
   else syncRefFields();
   state.pendingFolder = p.get('pasta') || '';
   $('#whole').checked = p.get('inteira') === '1';
+  if (SORTS[p.get('ordem')]) $('#sort').value = p.get('ordem');
   state.pendingOpen = p.get('arquivo') || null;
   syncIntro($('#q').value, currentRef(), state.pendingFolder);
 
